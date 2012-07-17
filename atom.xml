@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[My Octopress Blog]]></title>
-  <link href="http://yoursite.com/atom.xml" rel="self"/>
-  <link href="http://yoursite.com/"/>
-  <updated>2012-07-17T19:36:08+08:00</updated>
-  <id>http://yoursite.com/</id>
+  <title><![CDATA[lilinux's blog]]></title>
+  <link href="http://lilinux.github.com/atom.xml" rel="self"/>
+  <link href="http://lilinux.github.com/"/>
+  <updated>2012-07-17T20:01:56+08:00</updated>
+  <id>http://lilinux.github.com/</id>
   <author>
-    <name><![CDATA[Your Name]]></name>
+    <name><![CDATA[lilinux]]></name>
     
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Hello]]></title>
-    <link href="http://yoursite.com/blog/2012/07/17/hello/"/>
+    <link href="http://lilinux.github.com/blog/2012/07/hello/"/>
     <updated>2012-07-17T19:34:00+08:00</updated>
-    <id>http://yoursite.com/blog/2012/07/17/hello</id>
+    <id>http://lilinux.github.com/blog/2012/07/hello</id>
     <content type="html"><![CDATA[<h2>Hello</h2>
 
 <p>依<strong>葫芦</strong>画了个<strong>瓢</strong></p>
