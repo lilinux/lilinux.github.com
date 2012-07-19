@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 测试 | lilinux's blog]]></title>
   <link href="http://lilinux.github.com/blog/categories/测试/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2012-07-19T19:51:00+08:00</updated>
+  <updated>2012-07-19T19:51:49+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -929,7 +929,7 @@ the text you want to pull, surround it like this and that's all there is to it.
 
 <p>正常文字，我们是<em>正常</em>文字</p>
 
-<p># ---------------------------------------------------------------------------#
+<p><code># ---------------------------------------------------------------------------#
 # /etc/pam.conf								     #
 # ---------------------------------------------------------------------------#
 #
@@ -944,7 +944,7 @@ the text you want to pull, surround it like this and that's all there is to it.
 # serv.	module	   ctrl	      module [path]	...[args..]		     #
 # name	type	   flag							     #
 
-</p>
+</code></p>
 
 <h1>3. 正常语法示例</h1>
 
