@@ -4,7 +4,7 @@
   <title><![CDATA[Category: markdown | lilinux's blog]]></title>
   <link href="http://lilinux.github.com/blog/categories/markdown/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2012-07-19T19:46:44+08:00</updated>
+  <updated>2012-07-19T19:51:00+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -946,10 +946,7 @@ the text you want to pull, surround it like this and that's all there is to it.
 
 </p>
 
-<ol>
-<li>正常语法示例</li>
-</ol>
-
+<h1>3. 正常语法示例</h1>
 
 <hr />
 
