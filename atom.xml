@@ -4,7 +4,7 @@
   <title><![CDATA[lilinux's blog]]></title>
   <link href="http://lilinux.github.com/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2012-07-19T19:51:49+08:00</updated>
+  <updated>2012-07-19T19:53:02+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -946,34 +946,6 @@ the text you want to pull, surround it like this and that&#8217;s all there is t
 </span></p>
 
 <p>正常文字，我们是<em>正常</em>文字</p>
-
-<p>&#8220;# &#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;#</p>
-
-<h1>/etc/pam.conf</h1>
-
-<h1>&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;</h1>
-
-<p>#</p>
-
-<h1>NOTE</h1>
-
-<h1>&#8212;-</h1>
-
-<p>#</p>
-
-<h1>NOTE: Most program use a file under the /etc/pam.d/ directory to setup their</h1>
-
-<h1>PAM service modules. This file is used only if that directory does not exist.</h1>
-
-<h1>&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;</h1>
-
-<h1>Format:</h1>
-
-<h1>serv. module     ctrl       module [path] &#8230;[args..]</h1>
-
-<h1>name  type       flag</h1>
-
-<p>&#8220;</p>
 
 <h1>3. 正常语法示例</h1>
 
