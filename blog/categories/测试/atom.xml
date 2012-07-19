@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[lilinux's blog]]></title>
-  <link href="http://lilinux.github.com/atom.xml" rel="self"/>
+  <title><![CDATA[Category: 测试 | lilinux's blog]]></title>
+  <link href="http://lilinux.github.com/blog/categories/测试/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
   <updated>2012-07-19T18:52:47+08:00</updated>
   <id>http://lilinux.github.com/</id>
@@ -25,17 +25,6 @@
 <hr />
 
 <p>I am <code>tail</code></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Hello]]></title>
-    <link href="http://lilinux.github.com/blog/2012/07/hello/"/>
-    <updated>2012-07-17T19:34:00+08:00</updated>
-    <id>http://lilinux.github.com/blog/2012/07/hello</id>
-    <content type="html"><![CDATA[<h2>Hello</h2>
-
-<p>依<strong>葫芦</strong>画了个<strong>瓢</strong></p>
 ]]></content>
   </entry>
   
