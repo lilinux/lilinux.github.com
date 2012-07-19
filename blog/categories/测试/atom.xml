@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 测试 | lilinux's blog]]></title>
   <link href="http://lilinux.github.com/blog/categories/测试/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2012-07-19T18:52:47+08:00</updated>
+  <updated>2012-07-19T19:02:43+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -18,11 +18,64 @@
     <link href="http://lilinux.github.com/blog/2012/07/markdownce-shi-ye-mian/"/>
     <updated>2012-07-19T18:43:00+08:00</updated>
     <id>http://lilinux.github.com/blog/2012/07/markdownce-shi-ye-mian</id>
-    <content type="html"><![CDATA[<h1>0. 前言</h1>
+    <content type="html"><![CDATA[<h1>0.    前言</h1>
 
 <p>这是一篇<strong>测试</strong>文档</p>
 
 <hr />
+
+<h1>1.   代码示例</h1>
+
+<p>Plain
+<code>
+$ sudo make me a sandwich
+</code></p>
+
+<p>Example With Syntax Highlighting a Caption and Link</p>
+
+<p>``` ruby Discover if a number is prime http://www.noulakaz.net/weblog/2007/03/18/a-regular-expression-to-check-for-prime-numbers/ Source Article
+class Fixnum
+  def prime?</p>
+
+<pre><code>('1' * self) !~ /^1?$|^(11+?)\1+$/
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>``` python 选择合适的so
+import sys</p>
+
+<p>sub_version = sys.version_info[1]<br/>
+if sub_version == 4:</p>
+
+<pre><code>import setproctitle24 as setproctitlelib
+</code></pre>
+
+<p>elif sub_version == 6:</p>
+
+<pre><code>import setproctitle26 as setproctitlelib
+</code></pre>
+
+<p>else:</p>
+
+<pre><code>setproctitlelib = None
+</code></pre>
+
+<p>def setproctitle(title):</p>
+
+<pre><code>if setproctitlelib:
+    setproctitlelib.setproctitle(title)
+
+def getproctitle():
+    if setproctitlelib:
+        return setproctitlelib.getproctitle()
+    else:
+        return None
+</code></pre>
+
+<p>```</p>
 
 <p>I am <code>tail</code></p>
 ]]></content>
