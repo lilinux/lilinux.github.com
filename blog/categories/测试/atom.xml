@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 测试 | lilinux's blog]]></title>
   <link href="http://lilinux.github.com/blog/categories/测试/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2012-07-19T19:33:40+08:00</updated>
+  <updated>2012-07-19T19:43:34+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -909,8 +909,47 @@ def getproctitle():
 
 <h1>2.   其它插件</h1>
 
-<p>图片：
-<img src="https://a248.e.akamai.net/assets.github.com/images/modules/header/logo_gist.png?1338945075"></p>
+<p>图片：</p>
+
+<p><img src="https://a248.e.akamai.net/assets.github.com/images/modules/header/logo_gist.png?1338945075" title="#3" ></p>
+
+<blockquote><p>markdown区块
+这是一个区块</p>
+
+<blockquote><p>子区块</p></blockquote></blockquote>
+
+<p>Quote from a printed work.(区块插件)</p>
+
+<p><blockquote><p>Flying is learning how to throw yourself at the ground and miss.</p><footer><strong>Douglas Adams, The Hichhikers Guide to the Galaxy</strong> <cite><a href='http://octopress.org/docs/plugins/blockquote/'>区块参考链接</a></cite></footer></blockquote></p>
+
+<p><span class='pullquote-right' data-pullquote='surround it like this'>
+Surround your paragraph with the pull quote tags. Then when you come to
+the text you want to pull, surround it like this and that's all there is to it.
+</span></p>
+
+<p># ---------------------------------------------------------------------------#
+# /etc/pam.conf								     #
+# ---------------------------------------------------------------------------#
+#
+# NOTE
+# ----
+#
+# NOTE: Most program use a file under the /etc/pam.d/ directory to setup their
+# PAM service modules. This file is used only if that directory does not exist.
+# ---------------------------------------------------------------------------#
+
+# Format:
+# serv.	module	   ctrl	      module [path]	...[args..]		     #
+# name	type	   flag							     #
+
+</p>
+
+<ol>
+<li>正常语法示例</li>
+</ol>
+
+
+<hr />
 
 <p>I am <code>tail</code></p>
 ]]></content>
