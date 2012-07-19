@@ -4,7 +4,7 @@
   <title><![CDATA[lilinux's blog]]></title>
   <link href="http://lilinux.github.com/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2012-07-19T19:23:54+08:00</updated>
+  <updated>2012-07-19T19:33:40+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -923,6 +923,11 @@
 </span><span class='line'><span class="kd">var</span> <span class="nx">arr2</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">element0</span><span class="p">,</span> <span class="nx">element1</span><span class="p">,</span> <span class="p">...,</span> <span class="nx">elementN</span><span class="p">);</span>
 </span></code></pre></td></tr></table></div></figure>
 
+
+<h1>2.   其它插件</h1>
+
+<p>图片：
+<img src="https://a248.e.akamai.net/assets.github.com/images/modules/header/logo_gist.png?1338945075"></p>
 
 <p>I am <code>tail</code></p>
 ]]></content>
