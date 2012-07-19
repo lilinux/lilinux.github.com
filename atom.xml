@@ -4,7 +4,7 @@
   <title><![CDATA[lilinux's blog]]></title>
   <link href="http://lilinux.github.com/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2012-07-19T19:23:17+08:00</updated>
+  <updated>2012-07-19T19:23:54+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -23,6 +23,9 @@
 <p>这是一篇<strong>测试</strong>文档</p>
 
 <hr />
+
+<!--more -->
+
 
 <h1>1.   代码示例</h1>
 
