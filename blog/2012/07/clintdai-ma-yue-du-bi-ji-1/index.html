@@ -1,0 +1,518 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>clint代码阅读笔记 - lilinux's blog</title>
+  <meta name="author" content="lilinux">
+
+  
+  <meta name="description" content="一直认为自己的水平还有待提高，所以尝试在github上找一些有意思的开源代码阅读，即可以陶冶情操，又可以学到一些在实践中各种闪光的东西，如果能参与进去那就更好了。 最先看的是clint, 原托管地址在此 clint是一个命令行程序的辅助库，它做了一些繁琐的事，截一断介绍 1
+2
+3
+4
+5
+6
+7 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lilinux.github.com/blog/2012/07/clintdai-ma-yue-du-bi-ji-1/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="lilinux's blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">lilinux's blog</a></h1>
+  
+    <h2>我不是hacker</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lilinux.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Clint代码阅读笔记</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-07-25T17:18:00+08:00" pubdate data-updated="true">2012-07-25 Wed</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>一直认为自己的水平还有待提高，所以尝试在<a href="http://www.github.com">github</a>上找一些有意思的开源代码阅读，即可以陶冶情操，又可以学到一些在实践中各种闪光的东西，如果能参与进去那就更好了。</p>
+
+<p>最先看的是<code>clint</code>, 原托管地址<a href="https://github.com/kennethreitz/clint">在此</a></p>
+
+<!--more-->
+
+
+<p>clint是一个命令行程序的辅助库，它做了一些繁琐的事，截一断介绍</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>C ommand L ine IN terface T ools .
+</span><span class='line'>
+</span><span class='line'>Clint is awesome. Crazy awesome. It supports colors, but detects if the session is a TTY, so doesn't render the colors if you're piping stuff around. Automagically.
+</span><span class='line'>
+</span><span class='line'>Awesome nest-able indentation context manager. Example: (with indent(4): puts('indented text')). It supports custom email-style quotes. Of course, it supports color too, if and when needed.
+</span><span class='line'>
+</span><span class='line'>It has an awesome Column printer with optional auto-expanding columns. It detects how wide your current console is and adjusts accordingly. It wraps your words properly to fit the column size. With or without colors mixed in. All with a single function call.
+</span><span class='line'>
+</span><span class='line'>The world's easiest to use implicit argument system w/ chaining methods for filtering. Seriously.
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>确实看到了一些亮点，做笔记如下：</p>
+
+<h2>获取管道传进来的数据</h2>
+
+<p>管道或重定向将数据发送到当前进程的标准输入。首先需要确定标准输入是否连接了管道然后再读出。</p>
+
+<figure class='code'><figcaption><span>piped_in </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">isatty</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span class='line'><span class="k">else</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">return</span> <span class="bp">None</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>原理很简单，但不容易想到</p>
+
+<h2>progressbar</h2>
+
+<p>在命令行下的进度条。原来在一些安装或检测脚本的执行结果中看到，进度条会在更新时覆盖掉原有的状态，原来一直以为是和终端相关的很帅气的功能，看到代码原来是很少见的回车符<code>\r</code>，它只回到行首而不换行。</p>
+
+<figure class='code'><figcaption><span>update state in this line</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;time left: </span><span class="si">%3d</span><span class="se">\r</span><span class="s">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>性能优化</h2>
+
+<p>发现clint的代码中对list的处理不够优雅，有些代码可以改得更快更简单。</p>
+
+<p>比如<code>tsplit</code>函数和<code>schunk</code>函数</p>
+
+<figure class='code'><figcaption><span>tsplit</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">tsplit</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">delimiters</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;Behaves str.split but supports tuples of delimiters.&quot;&quot;&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">delimiters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">delimiters</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">stack</span> <span class="o">=</span> <span class="p">[</span><span class="n">string</span><span class="p">,]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="n">delimiter</span> <span class="ow">in</span> <span class="n">delimiters</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">substring</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stack</span><span class="p">):</span>
+</span><span class='line'>            <span class="n">substack</span> <span class="o">=</span> <span class="n">substring</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">delimiter</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">_substring</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">substack</span><span class="p">):</span>
+</span><span class='line'>                <span class="n">stack</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">,</span> <span class="n">_substring</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">stack</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>schunk</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">schunk</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;Splits string into n sized chunks.&quot;&quot;&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">substack</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>    <span class="n">current_count</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">current_count</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">substack</span><span class="p">))</span>
+</span><span class='line'>            <span class="n">substack</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>            <span class="n">current_count</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">substack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">current_count</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">substack</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">substack</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">stack</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这两段代码具有明显的C程序员风格，而我一直认为<strong>Python代码的好坏可以从缩进层次上看出</strong>，如果缩进得扭扭捏捏，那多半是可以优化的，<strong>尤其是对列表的处理</strong></p>
+
+<p>我尝试优化这两个函数</p>
+
+<figure class='code'><figcaption><span>tsplit2</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">tsplit2</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">delimiters</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">delimiters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">delimiters</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">delimiters</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">return</span> <span class="p">[</span><span class="n">string</span><span class="p">,]</span>
+</span><span class='line'>    <span class="n">final_delimiter</span> <span class="o">=</span> <span class="n">delimiters</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">delimiters</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+</span><span class='line'>        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">final_delimiter</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">final_delimiter</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>schunk2</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">schunk2</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="n">string</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">size</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">),</span> <span class="n">size</span><span class="p">)]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>不管是从缩进上还是从行数上，是不是都要漂亮一些呢。</p>
+
+<p>好，我们来做一下性能对比：</p>
+
+<figure class='code'><figcaption><span>tsplit性能对比</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">In</span> <span class="p">[</span><span class="mi">35</span><span class="p">]:</span> <span class="n">timeit</span> <span class="o">-</span><span class="n">n</span> <span class="mi">10000</span> <span class="n">utils</span><span class="o">.</span><span class="n">tsplit</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;abc&#39;</span><span class="p">,</span> <span class="s">&#39;def&#39;</span><span class="p">,</span> <span class="s">&#39;for&#39;</span><span class="p">,</span> <span class="s">&#39;xx&#39;</span><span class="p">,</span> <span class="s">&#39;oo&#39;</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">))</span>
+</span><span class='line'><span class="mi">10000</span> <span class="n">loops</span><span class="p">,</span> <span class="n">best</span> <span class="n">of</span> <span class="mi">3</span><span class="p">:</span> <span class="mf">1.62</span> <span class="n">ms</span> <span class="n">per</span> <span class="n">loop</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">In</span> <span class="p">[</span><span class="mi">36</span><span class="p">]:</span> <span class="n">timeit</span> <span class="o">-</span><span class="n">n</span> <span class="mi">10000</span> <span class="n">utils</span><span class="o">.</span><span class="n">tsplit2</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;abc&#39;</span><span class="p">,</span> <span class="s">&#39;def&#39;</span><span class="p">,</span> <span class="s">&#39;for&#39;</span><span class="p">,</span> <span class="s">&#39;xx&#39;</span><span class="p">,</span> <span class="s">&#39;oo&#39;</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">))</span>
+</span><span class='line'><span class="mi">10000</span> <span class="n">loops</span><span class="p">,</span> <span class="n">best</span> <span class="n">of</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">101</span> <span class="n">us</span> <span class="n">per</span> <span class="n">loop</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>schunk性能对比</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">In</span> <span class="p">[</span><span class="mi">27</span><span class="p">]:</span> <span class="n">timeit</span> <span class="o">-</span><span class="n">n</span> <span class="mi">10000</span> <span class="n">utils</span><span class="o">.</span><span class="n">schunk2</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+</span><span class='line'><span class="mi">10000</span> <span class="n">loops</span><span class="p">,</span> <span class="n">best</span> <span class="n">of</span> <span class="mi">3</span><span class="p">:</span> <span class="mf">66.3</span> <span class="n">us</span> <span class="n">per</span> <span class="n">loop</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">In</span> <span class="p">[</span><span class="mi">28</span><span class="p">]:</span> <span class="n">timeit</span> <span class="o">-</span><span class="n">n</span> <span class="mi">10000</span> <span class="n">utils</span><span class="o">.</span><span class="n">schunk</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+</span><span class='line'><span class="mi">10000</span> <span class="n">loops</span><span class="p">,</span> <span class="n">best</span> <span class="n">of</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">956</span> <span class="n">us</span> <span class="n">per</span> <span class="n">loop</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>竟然都有近10倍以上的性能提升，当然这个比值并不一定准备，我只是随便找了个参数测试。</p>
+
+<p>其实这也印证了另外一条Python和C/C++不同的结论：</p>
+
+<p><strong>要尽量使用Python的标准库，自己写的代码即使再优化也难以达到和库函数媲美的效率</strong></p>
+
+<h2>The End</h2>
+
+<p>clint的代码很朴实有力，通过亮点的叠加实现了一个非常有用的扩展库。以后写对外的命令行程序一定要考虑使用它。</p>
+
+<p>关于最后那个性能的改良，也许有点画蛇添足，就没有去pull代码了，只发了个issue看开发者怎么说。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">lilinux</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-07-25T17:18:00+08:00" pubdate data-updated="true">2012-07-25 Wed</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/python/'>Python</a>, <a class='category' href='/blog/categories/clint/'>clint</a>, <a class='category' href='/blog/categories/列表解析/'>列表解析</a>, <a class='category' href='/blog/categories/笔记/'>笔记</a>, <a class='category' href='/blog/categories/管道输入/'>管道输入</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://lilinux.github.com/blog/2012/07/clintdai-ma-yue-du-bi-ji-1/" data-via="lilinux" data-counturl="http://lilinux.github.com/blog/2012/07/clintdai-ma-yue-du-bi-ji-1/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/07/markdownce-shi-ye-mian/" title="Previous Post: markdown测试页面">&laquo; markdown测试页面</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/07/clintdai-ma-yue-du-bi-ji-1/">clint代码阅读笔记</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/07/markdownce-shi-ye-mian/">markdown测试页面</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/07/hello/">Hello</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/lilinux">@lilinux</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'lilinux',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+<h1>新浪微博</h1>
+<ul id="weibo">
+    <li>
+    <iframe 
+        width="100%" 
+        height="550" 
+        class="share_self" 
+        frameborder="0" 
+        scrolling="no" 
+        src="http://widget.weibo.com/weiboshow/index.php?width=0&height=550&ptype=1&speed=0&skin=&isTitle=0&noborder=1&isWeibo=1&isFans=&uid=1816173632&verifier=f2e5e0d3">
+    </iframe>
+    </li>
+</ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("lilinux", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/lilinux" class="twitter-follow-button" data-show-count="false">Follow @lilinux</a>
+  
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - lilinux -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'lilinux';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lilinux.github.com/blog/2012/07/clintdai-ma-yue-du-bi-ji-1/';
+        var disqus_url = 'http://lilinux.github.com/blog/2012/07/clintdai-ma-yue-du-bi-ji-1/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

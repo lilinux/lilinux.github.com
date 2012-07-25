@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 列表解析 | lilinux's blog]]></title>
   <link href="http://lilinux.github.com/blog/categories/列表解析/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2012-07-25T19:19:57+08:00</updated>
+  <updated>2012-07-25T19:24:33+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -46,7 +46,7 @@ C ommand L ine IN terface T ools .</p>
 
 <p>管道或重定向将数据发送到当前进程的标准输入。首先需要确定标准输入是否连接了管道然后再读出。</p>
 
-<p>``` Python piped_in
+<p>```python piped_in
 if sys.stdin.isatty():</p>
 
 <pre><code>return sys.stdin.read()
@@ -64,7 +64,7 @@ if sys.stdin.isatty():</p>
 
 <p>在命令行下的进度条。原来在一些安装或检测脚本的执行结果中看到，进度条会在更新时覆盖掉原有的状态，原来一直以为是和终端相关的很帅气的功能，看到代码原来是很少见的回车符<code>\r</code>，它只回到行首而不换行。</p>
 
-<p>``` Python update state in this line
+<p>```python update state in this line
 for i in range(100, 0, -1):</p>
 
 <pre><code>sys.stderr.write('time left: %3d\r'%i)
@@ -79,7 +79,7 @@ time.sleep(1)
 
 <p>比如<code>tsplit</code>函数和<code>schunk</code>函数</p>
 
-<p>```Python tsplit
+<p>```python tsplit
 def tsplit(string, delimiters):</p>
 
 <pre><code>"""Behaves str.split but supports tuples of delimiters."""
@@ -99,7 +99,7 @@ return stack
 
 <p>```</p>
 
-<p>```Python schunk
+<p>```python schunk
 def schunk(string, size):</p>
 
 <pre><code>"""Splits string into n sized chunks."""
@@ -130,7 +130,7 @@ return stack
 
 <p>我尝试优化这两个函数</p>
 
-<p>``` Python tsplit2
+<p>```python tsplit2
 def tsplit2(string, delimiters):</p>
 
 <pre><code>delimiters = tuple(delimiters)
@@ -144,7 +144,7 @@ return string.split(final_delimiter)
 
 <p>```</p>
 
-<p>``` Python schunk2
+<p>```python schunk2
 def schunk2(string, size):</p>
 
 <pre><code>return [string[i:i+size] for i in range(0, len(string), size)]
@@ -156,7 +156,7 @@ def schunk2(string, size):</p>
 
 <p>好，我们来做一下性能对比：</p>
 
-<p>```shell tsplit性能对比
+<p>```python tsplit性能对比
 In [35]: timeit -n 10000 utils.tsplit(s, ('abc', 'def', 'for', 'xx', 'oo', ' '))<br/>
 10000 loops, best of 3: 1.62 ms per loop</p>
 
@@ -164,7 +164,7 @@ In [35]: timeit -n 10000 utils.tsplit(s, ('abc', 'def', 'for', 'xx', 'oo', ' '))
 10000 loops, best of 3: 101 us per loop
 ```</p>
 
-<p>```shell schunk性能对比
+<p>```python schunk性能对比
 In [27]: timeit -n 10000 utils.schunk2(s, 8)
 10000 loops, best of 3: 66.3 us per loop</p>
 
