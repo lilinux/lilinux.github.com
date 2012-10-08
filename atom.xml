@@ -4,7 +4,7 @@
   <title><![CDATA[lilinux's blog]]></title>
   <link href="http://lilinux.github.com/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2012-07-25T20:26:28+08:00</updated>
+  <updated>2012-10-08T13:37:58+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -12,6 +12,20 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[看了几天ruby]]></title>
+    <link href="http://lilinux.github.com/blog/2012/10/new-rubyer/"/>
+    <updated>2012-10-08T13:35:00+08:00</updated>
+    <id>http://lilinux.github.com/blog/2012/10/new-rubyer</id>
+    <content type="html"><![CDATA[<p>看了几天ruby，也许是有python的底子，除了block和mixin以外，没有太多的惊叹，只觉得语法糖太多太多</p>
+
+<!--more-->
+
+
+<p>好吧，其实我是没事找事</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[clint代码阅读笔记]]></title>
