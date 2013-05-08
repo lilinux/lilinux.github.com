@@ -4,7 +4,7 @@
   <title><![CDATA[Category: markdown | lilinux's blog]]></title>
   <link href="http://lilinux.github.com/blog/categories/markdown/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2013-05-08T17:55:52+08:00</updated>
+  <updated>2013-05-08T18:05:54+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -80,21 +80,20 @@ def getproctitle():
 
 <p>```</p>
 
-<p>File /home/lili/src/tmp/ping.cpp could not be found</p>
+<p>{% include_code ping host /home/lili/src/tmp/ping.cpp %}</p>
 
 <p>Add an optional URL to enable downloading or linking to source.</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Javascript Array Syntax </span><a href='http://j.mp/pPUUmW'>MDN Documentation </a></figcaption> <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">arr1</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">arrayLength</span><span class="p">);</span>
-</span><span class='line'><span class="kd">var</span> <span class="nx">arr2</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">element0</span><span class="p">,</span> <span class="nx">element1</span><span class="p">,</span> <span class="p">...,</span> <span class="nx">elementN</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>{% codeblock Javascript Array Syntax lang:js http://j.mp/pPUUmW MDN Documentation %}
+var arr1 = new Array(arrayLength);
+var arr2 = new Array(element0, element1, ..., elementN);
+{% endcodeblock %}</p>
 
 <h1>2.   其它插件</h1>
 
 <p>图片：</p>
 
-<p><img src="https://a248.e.akamai.net/assets.github.com/images/modules/header/logo_gist.png?1338945075" title="#3" ></p>
+<p>{% img https://a248.e.akamai.net/assets.github.com/images/modules/header/logo_gist.png?1338945075 #3 %}</p>
 
 <blockquote><p>markdown区块
 这是一个区块</p>
@@ -103,12 +102,14 @@ def getproctitle():
 
 <p>Quote from a printed work.(区块插件)</p>
 
-<p><blockquote><p>Flying is learning how to throw yourself at the ground and miss.</p><footer><strong>Douglas Adams, The Hichhikers Guide to the Galaxy</strong> <cite><a href='http://octopress.org/docs/plugins/blockquote/'>区块参考链接</a></cite></footer></blockquote></p>
+<p>{% blockquote Douglas Adams, The Hichhikers Guide to the Galaxy http://octopress.org/docs/plugins/blockquote/ 区块参考链接 %}
+Flying is learning how to throw yourself at the ground and miss.
+{% endblockquote %}</p>
 
-<p><span class='pullquote-right' data-pullquote='surround it like this'>
+<p>{% pullquote %}
 Surround your paragraph with the pull quote tags. Then when you come to
-the text you want to pull, surround it like this and that's all there is to it.
-</span></p>
+the text you want to pull, {" surround it like this "} and that's all there is to it.
+{% endpullquote %}</p>
 
 <p>正常文字，我们是<em>正常</em>文字</p>
 
