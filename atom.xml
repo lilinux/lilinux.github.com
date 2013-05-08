@@ -4,7 +4,7 @@
   <title><![CDATA[lilinux's blog]]></title>
   <link href="http://lilinux.github.com/atom.xml" rel="self"/>
   <link href="http://lilinux.github.com/"/>
-  <updated>2013-05-08T17:55:52+08:00</updated>
+  <updated>2013-05-08T18:06:56+08:00</updated>
   <id>http://lilinux.github.com/</id>
   <author>
     <name><![CDATA[lilinux]]></name>
@@ -22,7 +22,7 @@
 
 <p>一开始的时候我提了个问题：</p>
 
-<blockquote><h1>掉过的坑# crontab里有大量的周期任务（各种检测脚本），一到整点的时刻，大量任务同时执行，影响机器瞬时的性能。有没有什么正派的方法来解决此问题？</h1></blockquote>
+<blockquote><p>crontab里有大量的周期任务（各种检测脚本），一到整点的时刻，大量任务同时执行，影响机器瞬时的性能。有没有什么正派的方法来解决此问题？</p></blockquote>
 
 <p>crontab是神器，人人都爱它，因此每装一个组件，就会附上几个crontab的任务，要么是检测进程运行情况啊，要么是定期收集统计数据啊。这些任务大部分是脚本，大家可能想：我的进程一跑就是跑好几个月，多几个附加脚本检测检测环境，能出啥问题？</p>
 
@@ -58,32 +58,20 @@
 <p>回答几个其它的考虑方案</p>
 
 <ol>
-<li>把cron的时间错开不就好了咩</li>
+<li><p>把cron的时间错开不就好了咩</p>
+
+<p>我们可以尝试把周期的“最小公倍数”调大一点，但整点总是绕不过去的</p></li>
+<li><p>在任务执行前随机sleep不就好了咩</p>
+
+<p>sleep多久？怎么随机才会减少并发？</p></li>
+<li><p>把周期相同的任务合成一个任务串行执行不就好了咩</p>
+
+<p>首先各种周期都有，不大好合；其次合起来不利于增删任务</p></li>
+<li><p>为啥不用文件锁</p>
+
+<p>文件锁也许是一种更好的阻塞串行方案。不过我们这里特定的场景导致不能用文件锁。本文后面的代码都是基于命名管道的。</p></li>
 </ol>
 
-
-<p>我们可以尝试把周期的“最小公倍数”调大一点，但整点总是绕不过去的</p>
-
-<ol>
-<li>在任务执行前随机sleep不就好了咩</li>
-</ol>
-
-
-<p>sleep多久？怎么随机才会减少并发？</p>
-
-<ol>
-<li>把周期相同的任务合成一个任务串行执行不就好了咩</li>
-</ol>
-
-
-<p>首先各种周期都有，不大好合；其次合起来不利于增删任务</p>
-
-<ol>
-<li>为啥不用文件锁</li>
-</ol>
-
-
-<p>文件锁也许是一种更好的阻塞串行方案。不过我们这里特定的场景导致不能用文件锁。本文后面的代码都是基于命名管道的。</p>
 
 <h1>2. 尝试</h1>
 
@@ -191,16 +179,16 @@
 
 <p>把crontab里的内容清空，并添加以下几行</p>
 
-<figure class='code'><figcaption><span>/tmp/acct.py</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>crontab -e</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">waste</span><span class="o">.</span><span class="n">py</span>
-</span><span class='line'><span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">waste</span><span class="o">.</span><span class="n">py</span>
-</span><span class='line'><span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">waste</span><span class="o">.</span><span class="n">py</span>
-</span><span class='line'><span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">waste</span><span class="o">.</span><span class="n">py</span>
-</span><span class='line'><span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">waste</span><span class="o">.</span><span class="n">py</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>* * * * * /tmp/waste.py
+</span><span class='line'>* * * * * /tmp/waste.py
+</span><span class='line'>* * * * * /tmp/waste.py
+</span><span class='line'>* * * * * /tmp/waste.py
+</span><span class='line'>* * * * * /tmp/waste.py
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -210,23 +198,23 @@
 
 <p>我们先往管道里写个东西。</p>
 
-<figure class='code'><figcaption><span>/tmp/acct.py</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">test_unlock</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>test_unlock
 </span></code></pre></td></tr></table></div></figure>
 
 
 <p>把crontab里的内容改为</p>
 
-<figure class='code'><figcaption><span>/tmp/acct.py</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>crontab -e</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="n">test_lock</span><span class="p">;</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">waste</span><span class="o">.</span><span class="n">py</span><span class="p">;</span> <span class="n">test_unlock</span>
-</span><span class='line'><span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="n">test_lock</span><span class="p">;</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">waste</span><span class="o">.</span><span class="n">py</span><span class="p">;</span> <span class="n">test_unlock</span>
-</span><span class='line'><span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="n">test_lock</span><span class="p">;</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">waste</span><span class="o">.</span><span class="n">py</span><span class="p">;</span> <span class="n">test_unlock</span>
-</span><span class='line'><span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="n">test_lock</span><span class="p">;</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">waste</span><span class="o">.</span><span class="n">py</span><span class="p">;</span> <span class="n">test_unlock</span>
-</span><span class='line'><span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="n">test_lock</span><span class="p">;</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">waste</span><span class="o">.</span><span class="n">py</span><span class="p">;</span> <span class="n">test_unlock</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>* * * * * test_lock; /tmp/waste.py; test_unlock
+</span><span class='line'>* * * * * test_lock; /tmp/waste.py; test_unlock
+</span><span class='line'>* * * * * test_lock; /tmp/waste.py; test_unlock
+</span><span class='line'>* * * * * test_lock; /tmp/waste.py; test_unlock
+</span><span class='line'>* * * * * test_lock; /tmp/waste.py; test_unlock
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -236,7 +224,7 @@
 
 <p>截取加锁前后两分钟acct.py的输出</p>
 
-<figure class='code'><figcaption><span>/tmp/acct.py</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -355,127 +343,137 @@
 <span class='line-number'>117</span>
 <span class='line-number'>118</span>
 <span class='line-number'>119</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mo">00</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mo">01</span> <span class="mi">90657281</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mo">02</span> <span class="mi">505697663</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mo">03</span> <span class="mi">83205572</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mo">04</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mo">05</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mo">06</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mo">07</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">08</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">09</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">10</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">11</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">12</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">13</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">14</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">15</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">16</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">17</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">18</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">19</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">20</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">21</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">22</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">23</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">24</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">25</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">26</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">27</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">28</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">30</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">31</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">32</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">33</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">34</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">35</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">36</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">37</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">38</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">39</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">40</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">41</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">42</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">43</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">44</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">45</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">46</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">47</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">48</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">49</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">50</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">51</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">52</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">53</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">54</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">55</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">56</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">57</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">58</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">34</span><span class="p">:</span><span class="mi">59</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mo">00</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mo">01</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mo">02</span> <span class="mi">161811573</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mo">03</span> <span class="mi">134427012</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mo">04</span> <span class="mi">132026009</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mo">05</span> <span class="mi">125121714</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mo">06</span> <span class="mi">109596054</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mo">07</span> <span class="mi">122559198</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">08</span> <span class="mi">36414980</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">09</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">10</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">11</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">12</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">13</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">14</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">15</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">16</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">17</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">18</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">19</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">20</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">21</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">22</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">23</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">24</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">25</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">26</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">27</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">28</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">29</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">30</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">31</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">32</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">33</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">34</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">35</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">36</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">37</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">38</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">39</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">40</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">41</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">42</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">43</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">44</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">45</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">46</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">47</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">48</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">49</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">50</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">51</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">52</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">53</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">54</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">55</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">56</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">57</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">58</span> <span class="mi">0</span>
-</span><span class='line'><span class="mi">11</span><span class="p">:</span><span class="mi">35</span><span class="p">:</span><span class="mi">59</span> <span class="mi">0</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>11:34:00 0
+</span><span class='line'>11:34:01 90657281
+</span><span class='line'>11:34:02 505697663
+</span><span class='line'>11:34:03 83205572
+</span><span class='line'>11:34:04 0
+</span><span class='line'>11:34:05 0
+</span><span class='line'>11:34:06 0
+</span><span class='line'>11:34:07 0
+</span><span class='line'>11:34:08 0
+</span><span class='line'>11:34:09 0
+</span><span class='line'>11:34:10 0
+</span><span class='line'>11:34:11 0
+</span><span class='line'>11:34:12 0
+</span><span class='line'>11:34:13 0
+</span><span class='line'>11:34:14 0
+</span><span class='line'>11:34:15 0
+</span><span class='line'>11:34:16 0
+</span><span class='line'>11:34:17 0
+</span><span class='line'>11:34:18 0
+</span><span class='line'>11:34:19 0
+</span><span class='line'>11:34:20 0
+</span><span class='line'>11:34:21 0
+</span><span class='line'>11:34:22 0
+</span><span class='line'>11:34:23 0
+</span><span class='line'>11:34:24 0
+</span><span class='line'>11:34:25 0
+</span><span class='line'>11:34:26 0
+</span><span class='line'>11:34:27 0
+</span><span class='line'>11:34:28 0
+</span><span class='line'>11:34:30 0
+</span><span class='line'>11:34:31 0
+</span><span class='line'>11:34:32 0
+</span><span class='line'>11:34:33 0
+</span><span class='line'>11:34:34 0
+</span><span class='line'>11:34:35 0
+</span><span class='line'>11:34:36 0
+</span><span class='line'>11:34:37 0
+</span><span class='line'>11:34:38 0
+</span><span class='line'>11:34:39 0
+</span><span class='line'>11:34:40 0
+</span><span class='line'>11:34:41 0
+</span><span class='line'>11:34:42 0
+</span><span class='line'>11:34:43 0
+</span><span class='line'>11:34:44 0
+</span><span class='line'>11:34:45 0
+</span><span class='line'>11:34:46 0
+</span><span class='line'>11:34:47 0
+</span><span class='line'>11:34:48 0
+</span><span class='line'>11:34:49 0
+</span><span class='line'>11:34:50 0
+</span><span class='line'>11:34:51 0
+</span><span class='line'>11:34:52 0
+</span><span class='line'>11:34:53 0
+</span><span class='line'>11:34:54 0
+</span><span class='line'>11:34:55 0
+</span><span class='line'>11:34:56 0
+</span><span class='line'>11:34:57 0
+</span><span class='line'>11:34:58 0
+</span><span class='line'>11:34:59 0
+</span><span class='line'>11:35:00 0
+</span><span class='line'>11:35:01 0
+</span><span class='line'>11:35:02 161811573
+</span><span class='line'>11:35:03 134427012
+</span><span class='line'>11:35:04 132026009
+</span><span class='line'>11:35:05 125121714
+</span><span class='line'>11:35:06 109596054
+</span><span class='line'>11:35:07 122559198
+</span><span class='line'>11:35:08 36414980
+</span><span class='line'>11:35:09 0
+</span><span class='line'>11:35:10 0
+</span><span class='line'>11:35:11 0
+</span><span class='line'>11:35:12 0
+</span><span class='line'>11:35:13 0
+</span><span class='line'>11:35:14 0
+</span><span class='line'>11:35:15 0
+</span><span class='line'>11:35:16 0
+</span><span class='line'>11:35:17 0
+</span><span class='line'>11:35:18 0
+</span><span class='line'>11:35:19 0
+</span><span class='line'>11:35:20 0
+</span><span class='line'>11:35:21 0
+</span><span class='line'>11:35:22 0
+</span><span class='line'>11:35:23 0
+</span><span class='line'>11:35:24 0
+</span><span class='line'>11:35:25 0
+</span><span class='line'>11:35:26 0
+</span><span class='line'>11:35:27 0
+</span><span class='line'>11:35:28 0
+</span><span class='line'>11:35:29 0
+</span><span class='line'>11:35:30 0
+</span><span class='line'>11:35:31 0
+</span><span class='line'>11:35:32 0
+</span><span class='line'>11:35:33 0
+</span><span class='line'>11:35:34 0
+</span><span class='line'>11:35:35 0
+</span><span class='line'>11:35:36 0
+</span><span class='line'>11:35:37 0
+</span><span class='line'>11:35:38 0
+</span><span class='line'>11:35:39 0
+</span><span class='line'>11:35:40 0
+</span><span class='line'>11:35:41 0
+</span><span class='line'>11:35:42 0
+</span><span class='line'>11:35:43 0
+</span><span class='line'>11:35:44 0
+</span><span class='line'>11:35:45 0
+</span><span class='line'>11:35:46 0
+</span><span class='line'>11:35:47 0
+</span><span class='line'>11:35:48 0
+</span><span class='line'>11:35:49 0
+</span><span class='line'>11:35:50 0
+</span><span class='line'>11:35:51 0
+</span><span class='line'>11:35:52 0
+</span><span class='line'>11:35:53 0
+</span><span class='line'>11:35:54 0
+</span><span class='line'>11:35:55 0
+</span><span class='line'>11:35:56 0
+</span><span class='line'>11:35:57 0
+</span><span class='line'>11:35:58 0
+</span><span class='line'>11:35:59 0
 </span></code></pre></td></tr></table></div></figure>
 
+
+<p>画个图是这样的</p>
+
+<p><img src="http://ww1.sinaimg.cn/bmiddle/6c409c40gw1e4fle9p1ljj20j707x0tk.jpg"></p>
+
+<h1>3. 结论</h1>
+
+<p>实际代码加测试代码一共三十行，反复测试效果也还挺不错的</p>
+
+<p>不知道有没有更好的办法</p>
 ]]></content>
   </entry>
   
