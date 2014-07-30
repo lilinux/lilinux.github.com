@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8">
+    <title>KVM子机重启事件的hook探索</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="lilinux">
+
+    <!-- Le styles -->
+    <link rel="stylesheet" href="/theme/css/bootstrap.min.css" type="text/css" />
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+      .tag-1 {
+        font-size: 13pt;
+      }
+      .tag-2 {
+        font-size: 10pt;
+      }
+      .tag-2 {
+        font-size: 8pt;
+      }
+      .tag-4 {
+        font-size: 6pt;
+     }
+    </style>
+    <link href="/theme/css/bootstrap-responsive.min.css" rel="stylesheet">
+        <link href="/theme/css/font-awesome.css" rel="stylesheet">
+
+    <link href="/theme/css/pygments.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="/theme/images/favicon.ico">
+    <link rel="apple-touch-icon" href="/theme/images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/theme/images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/theme/images/apple-touch-icon-114x114.png">
+
+    <link href="/" type="application/atom+xml" rel="alternate" title="Simple is Beautiful ATOM Feed" />
+
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="/index.html">Simple is Beautiful </a>
+          <div class="nav-collapse">
+            <ul class="nav">
+                <li><a href="/pages/about.html">About</a></li>
+                          <li class="divider-vertical"></li>
+                  <li >
+                    <a href="/category/misc.html">
+						<i class="icon-folder-open icon-large"></i>misc
+					</a>
+                  </li>
+
+                          <ul class="nav pull-right">
+                                <li><a href="/archives.html"><i class="icon-th-list"></i>Archives</a></li>
+                          </ul>
+
+            </ul>
+            <!--<p class="navbar-text pull-right">Logged in as <a href="#">username</a></p>-->
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="span9" id="content">
+<section id="content">
+        <article>
+                <header>
+                        <h1>
+                                <a href=""
+                                        rel="bookmark"
+                                        title="Permalink to KVM子机重启事件的hook探索">
+                                        KVM子机重启事件的hook探索
+                                </a>
+                        </h1>
+                </header>
+                <div class="entry-content">
+                <div class="well">
+<footer class="post-info">
+<span class="label">Date</span>
+<abbr class="published" title="2014-07-30T12:00:00">
+        <i class="icon-calendar"></i>2014-07-30 12:00:00 Wednesday
+</abbr>
+<span class="label">By</span>
+<a href="/author/lilinux.html"><i class="icon-user"></i>lilinux</a>
+<span class="label">Category</span>
+<a href="/category/cloud.html"><i class="icon-folder-open"></i>Cloud</a>.
+
+
+<span class="label">Tags</span>
+	<a href="/tag/yun-ji-suan.html"><i class="icon-tag"></i>云计算</a>
+	<a href="/tag/xu-ni-hua.html"><i class="icon-tag"></i>虚拟化</a>
+	<a href="/tag/qemu.html"><i class="icon-tag"></i>qemu</a>
+	<a href="/tag/kvm.html"><i class="icon-tag"></i>kvm</a>
+	<a href="/tag/libvirt.html"><i class="icon-tag"></i>libvirt</a>
+	<a href="/tag/hook.html"><i class="icon-tag"></i>hook</a>
+</footer><!-- /.post-info -->                </div>
+                <h2>0. 背景</h2>
+<p>我们常说：<U><strong>优秀的架构是不断演化的</strong></U>。而演化方向是需要对服务的各方面指标进行衡量而确定的, 所以我们要<strong>收集一切可收集的，监控一切可监控的</strong>。</p>
+<p>前两天，工头跟我说: 能不能监控到用户KVM子机的reboot，这是流程以外的数据，我想拿来分析分析，<em>顺便做一些愉快的事</em></p>
+<p>工头还说: 最坏的打算是修改qemu代码，qemu自己肯定是知道这些事的，不过<strong>解决问题的方式有很多，我们只用最好的那个</strong></p>
+<p>那时我已经收好东西打算收工回家，无奈只好看了着我厂大门上写的<code>高高兴兴上班，平平安安回家</code>，然后回工位。(当然我也没有想到这个地方在若干个小时之后发生了名震天下的5p事件)</p>
+<h2>1. Libvirt Hook机制</h2>
+<p>libvirt的hook机制有点像iptables的hook机制，你可以在特定事件发生的前后对相关资源进行自定义的操作。比如在子机启动之前可以将子机所需要的资源准备好，在子机启动之后，再添加相应的防火墙规则。</p>
+<p>hook的方式很简单，在指定的位置放上可执行文件就好，在hook点到达时libvirtd会调用这个可执行文件。</p>
+<p>只是对子机重启来说，我有充分理由怀疑这种略显粗糙的方式(调用脚本，传递有限的参数)是否会支持，因为至少启动子机表示了qemu进程的创建，停止子机表示了qemu进程的终止，而子机重启并不会在qemu进程及其使用的资源上有什么变化。也就是说，比起启动和停止，重启本身更难被粗糙的方式观察到。</p>
+<p>打开libvirt的<a href="http://www.libvirt.org/hooks.html">hook文档</a>，我们可以看到：</p>
+<p>libvirt的hook目前支持四类事件：</p>
+<ol>
+<li>libvirtd进程的启动、停止和重新加载配置。脚本应该放置在<code>$SYSCONFDIR/libvirt/hooks/daemon</code></li>
+<li>qemu子机的启动或停止。脚本应该放置在<code>$SYSCONFDIR/libvirt/hooks/qemu</code></li>
+<li>lxc子机的启动或停止。脚本应该放置在<code>$SYSCONFDIR/libvirt/hooks/lxc</code></li>
+<li>网络的启动或停止，网络接口的载入和卸载。脚本应该放置在<code>$SYSCONFDIR/libvirt/hooks/network</code></li>
+</ol>
+<p><em>$SYSCONFDIR一般应该是/etc或/usr/local/etc</em></p>
+<p>看着和我的推测是一致的，不过libvirt的文档是有名的简略和易误导。写个脚本验证下</p>
+<div class="highlight"><pre>vi /usr/local/etc/libvirt/hooks/qemu
+ln -sv /usr/local/etc/libvirt/hooks/<span class="o">{</span>qemu,daemon<span class="o">}</span>
+</pre></div>
+
+
+<p>内容如下 </p>
+<div class="highlight"><pre><span class="c">#!/usr/bin/env python</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">xx</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">xx</span><span class="p">):</span>
+        <span class="nb">open</span><span class="p">(</span><span class="s">&#39;/tmp/</span><span class="si">%s</span><span class="s">.log&#39;</span> <span class="o">%</span> <span class="n">fn</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">do_sth_you_like</span><span class="p">(</span><span class="n">argv</span><span class="p">):</span>
+        <span class="k">pass</span>  <span class="c"># TODO</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+        <span class="n">log</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="o">*</span><span class="mi">80</span><span class="p">)</span>
+        <span class="n">log</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">())</span>
+        <span class="n">log</span><span class="p">(</span><span class="s">&#39;sys.argv is: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">))</span>
+        <span class="c">#log(&#39;os.environ is: %s&#39; % str(os.environ))</span>
+        <span class="c">#log(&#39;os.cwd is: %s&#39; % str(os.getcwd()))</span>
+        <span class="n">do_sth_you_like</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+</pre></div>
+
+
+<p>然后在子机内重启</p>
+<p>两个日志文件都没有任何记录</p>
+<p>子机关机</p>
+<div class="highlight"><pre>================================================================================
+Tue Jul 29 07:02:47 2014
+sys.argv is: [&#39;/usr/local/etc/libvirt/hooks/qemu&#39;, &#39;b9521305-3c70-447c-8017-a477302e575f&#39;, &#39;stopped&#39;, &#39;end&#39;, &#39;-&#39;]
+================================================================================
+Tue Jul 29 07:02:47 2014
+sys.argv is: [&#39;/usr/local/etc/libvirt/hooks/qemu&#39;, &#39;b9521305-3c70-447c-8017-a477302e575f&#39;, &#39;release&#39;, &#39;end&#39;, &#39;-&#39;]
+</pre></div>
+
+
+<p>子机开机</p>
+<div class="highlight"><pre>================================================================================
+Tue Jul 29 06:59:40 2014
+sys.argv is: [&#39;/usr/local/etc/libvirt/hooks/qemu&#39;, &#39;b9521305-3c70-447c-8017-a477302e575f&#39;, &#39;prepare&#39;, &#39;begin&#39;, &#39;-&#39;]
+================================================================================
+Tue Jul 29 06:59:40 2014
+sys.argv is: [&#39;/usr/local/etc/libvirt/hooks/qemu&#39;, &#39;b9521305-3c70-447c-8017-a477302e575f&#39;, &#39;start&#39;, &#39;begin&#39;, &#39;-&#39;]
+================================================================================
+Tue Jul 29 06:59:41 2014
+sys.argv is: [&#39;/usr/local/etc/libvirt/hooks/qemu&#39;, &#39;b9521305-3c70-447c-8017-a477302e575f&#39;, &#39;started&#39;, &#39;begin&#39;, &#39;-&#39;]
+</pre></div>
+
+
+<p>daemon脚本只会在daemon启动和停止时打日志。</p>
+<p>此外，说libvirt hook粗糙，还有一个原因是：</p>
+<div class="highlight"><pre>Calling libvirt functions from within a hook script 
+DO NOT DO THIS!
+
+A hook script must not call back into libvirt, as the libvirt daemon is already waiting for the script to exit.
+
+A deadlock is likely to occur.
+</pre></div>
+
+
+<p>这还怎么让人做愉快的事啦！</p>
+<h2>2. QMP异步消息</h2>
+<p>用google搜索<code>qemu reboot hook</code>，找到一个<a href="http://serverfault.com/questions/181683/libvirt-qemu-reboot-hook">回答</a></p>
+<p>说是可以使用QMP的<a href="http://wiki.qemu.org/QMP#Asynchronous_message">异步消息</a></p>
+<p>libvirt控制qemu就是通过QMP通信的，比起工头说的改qemu代码，如果能用QMP，那肯定要简单得多啊。让人捉急的是，文档里除了表示QMP有这么个异步消息以外，也没说对子机内部的reboot是否会有事件通知。</p>
+<p>闷着头查了下qemu的代码</p>
+<p>找到一个文档</p>
+<div class="highlight"><pre>RESET
+-----
+
+Emitted when the Virtual Machine is reseted.
+
+Data: None.
+
+Example:
+
+{ &quot;event&quot;: &quot;RESET&quot;,
+    &quot;timestamp&quot;: { &quot;seconds&quot;: 1267041653, &quot;microseconds&quot;: 9518 } }
+</pre></div>
+
+
+<p>也看到了相关定义</p>
+<div class="highlight"><pre><span class="k">static</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">monitor_event_names</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">[</span><span class="n">QEVENT_SHUTDOWN</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;SHUTDOWN&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_RESET</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;RESET&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_POWERDOWN</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;POWERDOWN&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_STOP</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;STOP&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_RESUME</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;RESUME&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_VNC_CONNECTED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;VNC_CONNECTED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_VNC_INITIALIZED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;VNC_INITIALIZED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_VNC_DISCONNECTED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;VNC_DISCONNECTED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_BLOCK_IO_ERROR</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;BLOCK_IO_ERROR&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_RTC_CHANGE</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;RTC_CHANGE&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_WATCHDOG</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;WATCHDOG&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_SPICE_CONNECTED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;SPICE_CONNECTED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_SPICE_INITIALIZED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;SPICE_INITIALIZED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_SPICE_DISCONNECTED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;SPICE_DISCONNECTED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_BLOCK_JOB_COMPLETED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;BLOCK_JOB_COMPLETED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_BLOCK_JOB_CANCELLED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;BLOCK_JOB_CANCELLED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_BLOCK_JOB_ERROR</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;BLOCK_JOB_ERROR&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_BLOCK_JOB_READY</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;BLOCK_JOB_READY&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_DEVICE_DELETED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;DEVICE_DELETED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_DEVICE_TRAY_MOVED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;DEVICE_TRAY_MOVED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_NIC_RX_FILTER_CHANGED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;NIC_RX_FILTER_CHANGED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_SUSPEND</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;SUSPEND&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_SUSPEND_DISK</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;SUSPEND_DISK&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_WAKEUP</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;WAKEUP&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_BALLOON_CHANGE</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;BALLOON_CHANGE&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_SPICE_MIGRATE_COMPLETED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;SPICE_MIGRATE_COMPLETED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_GUEST_PANICKED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;GUEST_PANICKED&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">QEVENT_BLOCK_IMAGE_CORRUPTED</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;BLOCK_IMAGE_CORRUPTED&quot;</span><span class="p">,</span>
+<span class="p">};</span>
+</pre></div>
+
+
+<p>看来QMP里有我们想要的东西</p>
+<p>并且还在源码目录里找到一个脚本<code>scripts/qmp/qmp-shell</code></p>
+<p>来看看libvirt创建的qemu进程绑定的QMP设备是啥 <code>ps aux | grep qemu | grep ooxx</code> (<em>ooxx是我的子机名</em>)</p>
+<p>估摸着这一段是QMP设备 <code>-chardev socket,id=charmonitor,path=/usr/local/var/lib/libvirt/qemu/ooxx.monitor,server,nowait</code></p>
+<p>尝试通过脚本连接设备（其实就是个unix domain socket文件）</p>
+<p>等了很久没有输出，只好Control+C看看</p>
+<div class="highlight"><pre><span class="c"># ./qmp-shell /usr/local/var/lib/libvirt/qemu/ooxx.monitor</span>
+^CTraceback <span class="o">(</span>most recent call last<span class="o">)</span>:
+File <span class="s2">&quot;./qmp-shell&quot;</span>, line 286, in &lt;module&gt;
+    main<span class="o">()</span>
+File <span class="s2">&quot;./qmp-shell&quot;</span>, line 272, in main
+    qemu.connect<span class="o">()</span>
+File <span class="s2">&quot;./qmp-shell&quot;</span>, line 134, in connect
+    self._greeting <span class="o">=</span> qmp.QEMUMonitorProtocol.connect<span class="o">(</span>self<span class="o">)</span>
+File <span class="s2">&quot;/root/xxoo/qmp.py&quot;</span>, line 87, in connect
+    <span class="k">return </span>self.__negotiate_capabilities<span class="o">()</span>
+File <span class="s2">&quot;/root/xxoo/qmp.py&quot;</span>, line 52, in __negotiate_capabilities
+    <span class="nv">greeting</span> <span class="o">=</span> self.__json_read<span class="o">()</span>
+File <span class="s2">&quot;/root/xxoo/qmp.py&quot;</span>, line 63, in __json_read
+    <span class="nv">data</span> <span class="o">=</span> self.__sockfile.readline<span class="o">()</span>
+File <span class="s2">&quot;/usr/lib64/python2.6/socket.py&quot;</span>, line 450, in readline
+    <span class="nv">data</span> <span class="o">=</span> self._sock.recv<span class="o">(</span>self._rbufsize<span class="o">)</span>
+KeyboardInterrupt
+</pre></div>
+
+
+<p>通过Python的异常栈可以看出是卡在了connect上！</p>
+<p>看了会儿qemu的代码越陷越深，没有找到问题所在。但转念一想，如果连接qmp设备有问题，libvirt是不可能对qemu进行控制的</p>
+<div class="highlight"><pre><span class="c"># lsof | grep ooxx.monitor</span>
+qemu-syst 37055 root    3u     unix 0xffff8802423a63c0         0t0  457961493 /usr/local/var/lib/libvirt/qemu/ooxx.monitor
+qemu-syst 37055 root   19u     unix 0xffff882027dac0c0         0t0  457961616 /usr/local/var/lib/libvirt/qemu/ooxx.monitor
+</pre></div>
+
+
+<p>对文件的引用可以看出ooxx.monitor已经存在一个连接了，如果没有猜错，这应该就是libvirt的连接！</p>
+<p>而qmp设备可能有意只允许一个连接存在，所以造成了libvirt能操作qemu，而我的脚本无法连接上。进一步臆测一下，在实现上可能也没有用什么锁机制，只需要在进程/线程内listen/accept/recv就可以保证先来的连接独占设备了。</p>
+<p>不看代码了，快速验证一下：</p>
+<div class="highlight"><pre><span class="c"># kill `cat /usr/local/var/run/libvirtd.pid` </span>
+<span class="c"># lsof | grep ooxx.monitor                  </span>
+qemu-syst 37055 root    3u     unix 0xffff8802423a63c0         0t0  457961493 /usr/local/var/lib/libvirt/qemu/ooxx.monitor
+<span class="c"># ./qmp-shell /usr/local/var/lib/libvirt/qemu/ooxx.monitor                  </span>
+Welcome to the QMP low-level shell!
+Connected to QEMU 1.2.0
+
+<span class="o">(</span>QEMU<span class="o">)</span>
+</pre></div>
+
+
+<p>连上了，抱着激动的心情赶紧登录子机然后reboot, qmp-shell收到消息</p>
+<div class="highlight"><pre>{u&#39;timestamp&#39;: {u&#39;seconds&#39;: 1406685548, u&#39;microseconds&#39;: 610316}, u&#39;data&#39;: {u&#39;offset&#39;: -2}, u&#39;event&#39;: u&#39;RTC_CHANGE&#39;}
+{u&#39;timestamp&#39;: {u&#39;seconds&#39;: 1406685549, u&#39;microseconds&#39;: 50604}, u&#39;event&#39;: u&#39;RESET&#39;}
+{u&#39;timestamp&#39;: {u&#39;seconds&#39;: 1406685549, u&#39;microseconds&#39;: 88622}, u&#39;event&#39;: u&#39;RESET&#39;}
+</pre></div>
+
+
+<p>但是，如果是要实际使用的话，我怎么敢杀死libvirtd的进程呢？</p>
+<p>既然qmp的异步消息确实包括了我们想要的reboot事件，而连接又被libvirtd占据了，那libvirt是否有义务也返回个异步消息呢</p>
+<h2>3. libvirt domain event</h2>
+<p>虽然通读过几次libvirt的文档，但我从来不记得libvirt的api有异步消息的相关内容。</p>
+<p>virsh里有几个qemu相关的命令字</p>
+<div class="highlight"><pre>qemu-attach                    QEMU Attach
+qemu-monitor-command           QEMU Monitor Command
+qemu-agent-command             QEMU Guest Agent Command
+</pre></div>
+
+
+<p>实测发现<code>qemu-monitor-command</code>可以发送QMP命令，但并未返回QMP的异步消息</p>
+<p>尝试不同的关键字搜索，未找到相关内容。</p>
+<p>...只好打开libvirt的代码, 希望能找到libvirt对qmp异步消息的json消息体的处理</p>
+<div class="highlight"><pre><span class="c"># grep RESET * -r</span>
+</pre></div>
+
+
+<p>输出好几屏，换个冷门的词</p>
+<div class="highlight"><pre><span class="c"># grep RTC_CHANGE * -r</span>
+</pre></div>
+
+
+<p>找到文件<code>include/libvirt/libvirt.h</code></p>
+<div class="highlight"><pre><span class="k">typedef</span> <span class="k">enum</span> <span class="p">{</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_LIFECYCLE</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>       <span class="cm">/* virConnectDomainEventCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_REBOOT</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>          <span class="cm">/* virConnectDomainEventGenericCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_RTC_CHANGE</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>      <span class="cm">/* virConnectDomainEventRTCChangeCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_WATCHDOG</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>        <span class="cm">/* virConnectDomainEventWatchdogCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_IO_ERROR</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>        <span class="cm">/* virConnectDomainEventIOErrorCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_GRAPHICS</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>        <span class="cm">/* virConnectDomainEventGraphicsCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> <span class="cm">/* virConnectDomainEventIOErrorReasonCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_CONTROL_ERROR</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span>   <span class="cm">/* virConnectDomainEventGenericCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_BLOCK_JOB</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>       <span class="cm">/* virConnectDomainEventBlockJobCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_DISK_CHANGE</span> <span class="o">=</span> <span class="mi">9</span><span class="p">,</span>     <span class="cm">/* virConnectDomainEventDiskChangeCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_TRAY_CHANGE</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>    <span class="cm">/* virConnectDomainEventTrayChangeCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_PMWAKEUP</span> <span class="o">=</span> <span class="mi">11</span><span class="p">,</span>       <span class="cm">/* virConnectDomainEventPMWakeupCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_PMSUSPEND</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>      <span class="cm">/* virConnectDomainEventPMSuspendCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_BALLOON_CHANGE</span> <span class="o">=</span> <span class="mi">13</span><span class="p">,</span> <span class="cm">/* virConnectDomainEventBalloonChangeCallback */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_PMSUSPEND_DISK</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span> <span class="cm">/* virConnectDomainEventPMSuspendDiskCallback */</span>
+
+<span class="cp">#ifdef VIR_ENUM_SENTINELS</span>
+    <span class="cm">/*   </span>
+<span class="cm">    * NB: this enum value will increase over time as new events are</span>
+<span class="cm">    * added to the libvirt API. It reflects the last event ID supported</span>
+<span class="cm">    * by this version of the libvirt API.</span>
+<span class="cm">    */</span>
+    <span class="n">VIR_DOMAIN_EVENT_ID_LAST</span>
+<span class="cp">#endif</span>
+<span class="p">}</span> <span class="n">virDomainEventID</span><span class="p">;</span>
+</pre></div>
+
+
+<p>原来qmp的异步消息在libvirt里叫<code>domain event</code></p>
+<div class="highlight"><pre><span class="c"># grep VIR_DOMAIN_EVENT_ID_RTC_CHANGE * -r</span>
+</pre></div>
+
+
+<p>发现一个文件<code>examples/domain-events/events-c/event-test.c</code></p>
+<p>竟然是如何使用libvirt domain event API的示例</p>
+<p>甚至在同路径下还有Python的版本<code>examples/domain-events/events-python/event-test.py</code></p>
+<p><code>event-test.py</code>浅显易懂，比刚才的<code>qmp-shell</code>容易改写多了，只用几分钟就写好了<code>my-reboot-event.py</code></p>
+<div class="highlight"><pre><span class="c">#!/usr/bin/env python</span>
+<span class="kn">import</span> <span class="nn">libvirt</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+
+<span class="k">def</span> <span class="nf">init_loop</span><span class="p">():</span>
+
+    <span class="k">def</span> <span class="nf">loop</span><span class="p">():</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">libvirt</span><span class="o">.</span><span class="n">virEventRunDefaultImpl</span><span class="p">()</span>
+    <span class="n">libvirt</span><span class="o">.</span><span class="n">virEventRegisterDefaultImpl</span><span class="p">()</span>
+    <span class="n">eventLoopThread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">loop</span><span class="p">)</span>
+    <span class="n">eventLoopThread</span><span class="o">.</span><span class="n">setDaemon</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">eventLoopThread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">care_about</span><span class="p">(</span><span class="n">dom</span><span class="p">):</span>
+    <span class="s">&#39;hook for control the custom reboot policy&#39;</span>
+    <span class="k">return</span> <span class="bp">True</span>
+
+
+<span class="k">def</span> <span class="nf">do_sth_you_like</span><span class="p">(</span><span class="n">dom</span><span class="p">):</span>
+    <span class="n">dom</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">reboot_callback</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">dom</span><span class="p">,</span> <span class="n">opaque</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;catch reboot event from dom[</span><span class="si">%s</span><span class="s">]&#39;</span> <span class="o">%</span> <span class="n">dom</span><span class="o">.</span><span class="n">name</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">care_about</span><span class="p">(</span><span class="n">dom</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="n">do_sth_you_like</span><span class="p">(</span><span class="n">dom</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">let_me_go</span><span class="p">():</span>
+    <span class="n">uri</span> <span class="o">=</span> <span class="s">&#39;qemu:///system&#39;</span>
+    <span class="n">init_loop</span><span class="p">()</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">libvirt</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">domainEventRegisterAny</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">libvirt</span><span class="o">.</span><span class="n">VIR_DOMAIN_EVENT_ID_REBOOT</span><span class="p">,</span> <span class="n">reboot_callback</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">setKeepAlive</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">conn</span><span class="o">.</span><span class="n">isAlive</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">let_me_go</span><span class="p">()</span>
+</pre></div>
+
+
+<p>经过测试，一切正常。</p>
+<p>顺便在OpenStack/nova代码里grep一下，nova已经在用libvirt domain event了，它监听了<code>libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE</code>事件，它的回调函数将发生的事件通知给关注方。</p>
+<div class="highlight"><pre><span class="nd">@staticmethod</span>
+<span class="k">def</span> <span class="nf">_event_lifecycle_callback</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">dom</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">detail</span><span class="p">,</span> <span class="n">opaque</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Receives lifecycle events from libvirt.</span>
+
+<span class="sd">    NB: this method is executing in a native thread, not</span>
+<span class="sd">    an eventlet coroutine. It can only invoke other libvirt</span>
+<span class="sd">    APIs, or use self.queue_event(). Any use of logging APIs</span>
+<span class="sd">    in particular is forbidden.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="bp">self</span> <span class="o">=</span> <span class="n">opaque</span>
+
+    <span class="n">uuid</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">UUIDString</span><span class="p">()</span>
+    <span class="n">transition</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">if</span> <span class="n">event</span> <span class="o">==</span> <span class="n">libvirt</span><span class="o">.</span><span class="n">VIR_DOMAIN_EVENT_STOPPED</span><span class="p">:</span>
+        <span class="n">transition</span> <span class="o">=</span> <span class="n">virtevent</span><span class="o">.</span><span class="n">EVENT_LIFECYCLE_STOPPED</span>
+    <span class="k">elif</span> <span class="n">event</span> <span class="o">==</span> <span class="n">libvirt</span><span class="o">.</span><span class="n">VIR_DOMAIN_EVENT_STARTED</span><span class="p">:</span>
+        <span class="n">transition</span> <span class="o">=</span> <span class="n">virtevent</span><span class="o">.</span><span class="n">EVENT_LIFECYCLE_STARTED</span>
+    <span class="k">elif</span> <span class="n">event</span> <span class="o">==</span> <span class="n">libvirt</span><span class="o">.</span><span class="n">VIR_DOMAIN_EVENT_SUSPENDED</span><span class="p">:</span>
+        <span class="n">transition</span> <span class="o">=</span> <span class="n">virtevent</span><span class="o">.</span><span class="n">EVENT_LIFECYCLE_PAUSED</span>
+    <span class="k">elif</span> <span class="n">event</span> <span class="o">==</span> <span class="n">libvirt</span><span class="o">.</span><span class="n">VIR_DOMAIN_EVENT_RESUMED</span><span class="p">:</span>
+        <span class="n">transition</span> <span class="o">=</span> <span class="n">virtevent</span><span class="o">.</span><span class="n">EVENT_LIFECYCLE_RESUMED</span>
+
+    <span class="k">if</span> <span class="n">transition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue_event</span><span class="p">(</span><span class="n">virtevent</span><span class="o">.</span><span class="n">LifecycleEvent</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="n">transition</span><span class="p">))</span>
+</pre></div>
+
+
+<h2>4. THE END</h2>
+<p><strong>搜索能力是解决问题能力的最重要组成部分</strong>, 这次走了不少弯路。不过在源码中杀个七进七出，倒也给漫漫长夜增添了不少色彩。</p>
+                </div><!-- /.entry-content -->
+        </article>
+</section>
+        </div><!--/span-->
+
+                <div class="span3 well sidebar-nav" id="sidebar">
+<ul class="nav nav-list">
+<li class="nav-header"><h4><i class="icon-external-link"></i> 链接</h4></li>
+    <li><a href="http://qcloud.com/"><i class="icon-external-link"></i>QCloud</a></li>
+<li class="nav-header"><h4><i class="icon-home icon-large"></i> 社交</h4></li>
+<li><a href="/" rel="alternate"><i class="icon-bookmark icon-large"></i>atom feed</a></li>
+    <li><a href="http://www.weibo.com/lilinux"><i class="icon-微博-sign icon-large"></i>微博</a></li>
+
+<li class="nav-header"><h4><i class="icon-folder-close icon-large"></i> 类别</h4></li>
+<li>
+<a href="/category/misc.html">
+    <i class="icon-folder-open icon-large"></i>misc
+</a>
+</li>
+
+<li class="nav-header"><h4><i class="icon-tags icon-large"></i> 标签</h4></li>
+
+
+</ul>        </div><!--/.well -->
+
+      </div><!--/row-->
+
+      <hr>
+
+      <footer>
+        <address id="about">
+                Proudly powered by <a href="http://pelican.notmyidea.org/">Pelican <i class="icon-external-link"></i></a>,
+                                which takes great advantage of <a href="http://python.org">Python <i class="icon-external-link"></i></a>.
+        </address><!-- /#about -->
+
+        <p>The theme is from <a href="http://twitter.github.com/bootstrap/">Bootstrap from Twitter <i class="icon-external-link"></i></a>,
+                   and <a href="http://fortawesome.github.com/Font-Awesome/">Font-Awesome <i class="icon-external-link"></i></a>, thanks!</p>
+      </footer>
+
+    </div><!--/.fluid-container-->
+
+
+
+    <!-- Le javascript -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/theme/js/jquery-1.7.2.min.js"></script>
+    <script src="/theme/js/bootstrap.min.js"></script>
+  </body>
+</html>

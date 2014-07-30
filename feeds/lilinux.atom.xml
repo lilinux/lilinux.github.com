@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Simple is Beautiful</title><link href="/" rel="alternate"></link><link href="/feeds/lilinux.atom.xml" rel="self"></link><id>/</id><updated>2014-07-30T06:00:00+08:00</updated><entry><title>KVM子机重启事件的hook探索</title><link href="/posts/cloud/qemu-reboot-hook/" rel="alternate"></link><updated>2014-07-30T06:00:00+08:00</updated><author><name>lilinux</name></author><id>tag:,2014-07-30:posts/cloud/qemu-reboot-hook/</id><summary type="html">&lt;h2&gt;0. 背景&lt;/h2&gt;
+&lt;p&gt;我们常说：&lt;U&gt;&lt;strong&gt;优秀的架构是不断演化的&lt;/strong&gt;&lt;/U&gt;。而演化方向是需要对服务的各方面指标进行衡量而确定的, 所以我们要&lt;strong&gt;收集一切可收集的，监控一切可监控的&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;前两天，工头跟我说: 能不能监控到用户KVM子机的reboot，这是流程以外的数据，我想拿来分析分析，&lt;em&gt;顺便做一些愉快的事&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;工头还说: 最坏的打算是修改qemu代码，qemu自己肯定是知道这些事的，不过&lt;strong&gt;解决问题的方式有很多，我们只用最好的那个&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;那时我已经收好东西打算收工回家，无奈只好看了着我厂大门上写的&lt;code&gt;高高兴兴上班，平平安安回家&lt;/code&gt;，然后回工位。(当然我也没有想到这个地方在若干个小时之后发生了名震天下的5p事件)&lt;/p&gt;
+&lt;h2&gt;1. Libvirt Hook机制&lt;/h2&gt;
+&lt;p&gt;libvirt的hook机制有点像iptables的hook机制，你可以在特定事件发生的前后对相关资源进行自定义的操作。比如在子机启动之前可以将子机所需要的资源准备好，在子机启动之后，再添加相应的防火墙规则。&lt;/p&gt;
+&lt;p&gt;hook的方式很简单，在指定的位置放上可执行文件就好，在hook点到达时libvirtd会调用这个可执行文件。&lt;/p&gt;
+&lt;p&gt;只是对子机重启来说，我有充分理由怀疑这种略显粗糙的方式(调用脚本，传递有限的参数)是否会支持，因为至少启动子机表示了qemu进程的创建，停止子机表示了qemu进程的终止，而子机重启并不会在qemu进程及其使用的资源上有什么变化。也就是说，比起启动和停止，重启本身更难被粗糙的方式观察到。&lt;/p&gt;
+&lt;p&gt;打开libvirt的&lt;a href="http://www.libvirt.org/hooks.html"&gt;hook文档&lt;/a&gt;，我们可以看到：&lt;/p&gt;
+&lt;p&gt;libvirt的hook目前支持四类事件：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;libvirtd进程的启动、停止和重新加载配置。脚本应该放置在&lt;code&gt;$SYSCONFDIR/libvirt/hooks/daemon&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;qemu子机的启动或停止。脚本应该放置在&lt;code&gt;$SYSCONFDIR/libvirt/hooks/qemu&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;lxc子机的启动或停止。脚本应该放置在&lt;code&gt;$SYSCONFDIR/libvirt/hooks/lxc&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;网络的启动或停止，网络接口的载入和卸载。脚本应该放置在&lt;code&gt;$SYSCONFDIR/libvirt/hooks/network&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;em&gt;$SYSCONFDIR一般应该是/etc或/usr/local/etc&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;看着和我的推测是一致的，不过libvirt的文档是有名的简略和易误导。写个脚本验证下&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;vi /usr/local/etc/libvirt/hooks/qemu
+ln -sv /usr/local/etc/libvirt/hooks/&lt;span class="o"&gt;{&lt;/span&gt;qemu,daemon&lt;span class="o"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;内容如下 &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;time&lt;/span&gt;
+
+&lt;span class="n"&gt;xx&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;basename&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;log&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fn&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;xx&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="nb"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;/tmp/&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;.log&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;fn&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;a&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;write&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_sth_you_like&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;pass&lt;/span&gt;  &lt;span class="c"&gt;# TODO&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;__main__&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;log&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;=&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="mi"&gt;80&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;log&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ctime&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+        &lt;span class="n"&gt;log&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;sys.argv is: &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+        &lt;span class="c"&gt;#log(&amp;#39;os.environ is: %s&amp;#39; % str(os.environ))&lt;/span&gt;
+        &lt;span class="c"&gt;#log(&amp;#39;os.cwd is: %s&amp;#39; % str(os.getcwd()))&lt;/span&gt;
+        &lt;span class="n"&gt;do_sth_you_like&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;然后在子机内重启&lt;/p&gt;
+&lt;p&gt;两个日志文件都没有任何记录&lt;/p&gt;
+&lt;p&gt;子机关机&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;================================================================================
+Tue Jul 29 07:02:47 2014
+sys.argv is: [&amp;#39;/usr/local/etc/libvirt/hooks/qemu&amp;#39;, &amp;#39;b9521305-3c70-447c-8017-a477302e575f&amp;#39;, &amp;#39;stopped&amp;#39;, &amp;#39;end&amp;#39;, &amp;#39;-&amp;#39;]
+================================================================================
+Tue Jul 29 07:02:47 2014
+sys.argv is: [&amp;#39;/usr/local/etc/libvirt/hooks/qemu&amp;#39;, &amp;#39;b9521305-3c70-447c-8017-a477302e575f&amp;#39;, &amp;#39;release&amp;#39;, &amp;#39;end&amp;#39;, &amp;#39;-&amp;#39;]
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;子机开机&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;================================================================================
+Tue Jul 29 06:59:40 2014
+sys.argv is: [&amp;#39;/usr/local/etc/libvirt/hooks/qemu&amp;#39;, &amp;#39;b9521305-3c70-447c-8017-a477302e575f&amp;#39;, &amp;#39;prepare&amp;#39;, &amp;#39;begin&amp;#39;, &amp;#39;-&amp;#39;]
+================================================================================
+Tue Jul 29 06:59:40 2014
+sys.argv is: [&amp;#39;/usr/local/etc/libvirt/hooks/qemu&amp;#39;, &amp;#39;b9521305-3c70-447c-8017-a477302e575f&amp;#39;, &amp;#39;start&amp;#39;, &amp;#39;begin&amp;#39;, &amp;#39;-&amp;#39;]
+================================================================================
+Tue Jul 29 06:59:41 2014
+sys.argv is: [&amp;#39;/usr/local/etc/libvirt/hooks/qemu&amp;#39;, &amp;#39;b9521305-3c70-447c-8017-a477302e575f&amp;#39;, &amp;#39;started&amp;#39;, &amp;#39;begin&amp;#39;, &amp;#39;-&amp;#39;]
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;daemon脚本只会在daemon启动和停止时打日志。&lt;/p&gt;
+&lt;p&gt;此外，说libvirt hook粗糙，还有一个原因是：&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;Calling libvirt functions from within a hook script 
+DO NOT DO THIS!
+
+A hook script must not call back into libvirt, as the libvirt daemon is already waiting for the script to exit.
+
+A deadlock is likely to occur.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这还怎么让人做愉快的事啦！&lt;/p&gt;
+&lt;h2&gt;2. QMP异步消息&lt;/h2&gt;
+&lt;p&gt;用google搜索&lt;code&gt;qemu reboot hook&lt;/code&gt;，找到一个&lt;a href="http://serverfault.com/questions/181683/libvirt-qemu-reboot-hook"&gt;回答&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;说是可以使用QMP的&lt;a href="http://wiki.qemu.org/QMP#Asynchronous_message"&gt;异步消息&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;libvirt控制qemu就是通过QMP通信的，比起工头说的改qemu代码，如果能用QMP，那肯定要简单得多啊。让人捉急的是，文档里除了表示QMP有这么个异步消息以外，也没说对子机内部的reboot是否会有事件通知。&lt;/p&gt;
+&lt;p&gt;闷着头查了下qemu的代码&lt;/p&gt;
+&lt;p&gt;找到一个文档&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;RESET
+-----
+
+Emitted when the Virtual Machine is reseted.
+
+Data: None.
+
+Example:
+
+{ &amp;quot;event&amp;quot;: &amp;quot;RESET&amp;quot;,
+    &amp;quot;timestamp&amp;quot;: { &amp;quot;seconds&amp;quot;: 1267041653, &amp;quot;microseconds&amp;quot;: 9518 } }
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;也看到了相关定义&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;static&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;monitor_event_names&lt;/span&gt;&lt;span class="p"&gt;[]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_SHUTDOWN&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;SHUTDOWN&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_RESET&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;RESET&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_POWERDOWN&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;POWERDOWN&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_STOP&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;STOP&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_RESUME&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;RESUME&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_VNC_CONNECTED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;VNC_CONNECTED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_VNC_INITIALIZED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;VNC_INITIALIZED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_VNC_DISCONNECTED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;VNC_DISCONNECTED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_BLOCK_IO_ERROR&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;BLOCK_IO_ERROR&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_RTC_CHANGE&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;RTC_CHANGE&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_WATCHDOG&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;WATCHDOG&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_SPICE_CONNECTED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;SPICE_CONNECTED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_SPICE_INITIALIZED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;SPICE_INITIALIZED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_SPICE_DISCONNECTED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;SPICE_DISCONNECTED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_BLOCK_JOB_COMPLETED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;BLOCK_JOB_COMPLETED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_BLOCK_JOB_CANCELLED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;BLOCK_JOB_CANCELLED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_BLOCK_JOB_ERROR&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;BLOCK_JOB_ERROR&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_BLOCK_JOB_READY&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;BLOCK_JOB_READY&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_DEVICE_DELETED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;DEVICE_DELETED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_DEVICE_TRAY_MOVED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;DEVICE_TRAY_MOVED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_NIC_RX_FILTER_CHANGED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;NIC_RX_FILTER_CHANGED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_SUSPEND&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;SUSPEND&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_SUSPEND_DISK&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;SUSPEND_DISK&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_WAKEUP&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;WAKEUP&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_BALLOON_CHANGE&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;BALLOON_CHANGE&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_SPICE_MIGRATE_COMPLETED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;SPICE_MIGRATE_COMPLETED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_GUEST_PANICKED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;GUEST_PANICKED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;QEVENT_BLOCK_IMAGE_CORRUPTED&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;BLOCK_IMAGE_CORRUPTED&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="p"&gt;};&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;看来QMP里有我们想要的东西&lt;/p&gt;
+&lt;p&gt;并且还在源码目录里找到一个脚本&lt;code&gt;scripts/qmp/qmp-shell&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;来看看libvirt创建的qemu进程绑定的QMP设备是啥 &lt;code&gt;ps aux | grep qemu | grep ooxx&lt;/code&gt; (&lt;em&gt;ooxx是我的子机名&lt;/em&gt;)&lt;/p&gt;
+&lt;p&gt;估摸着这一段是QMP设备 &lt;code&gt;-chardev socket,id=charmonitor,path=/usr/local/var/lib/libvirt/qemu/ooxx.monitor,server,nowait&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;尝试通过脚本连接设备（其实就是个unix domain socket文件）&lt;/p&gt;
+&lt;p&gt;等了很久没有输出，只好Control+C看看&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# ./qmp-shell /usr/local/var/lib/libvirt/qemu/ooxx.monitor&lt;/span&gt;
+^CTraceback &lt;span class="o"&gt;(&lt;/span&gt;most recent call last&lt;span class="o"&gt;)&lt;/span&gt;:
+File &lt;span class="s2"&gt;&amp;quot;./qmp-shell&amp;quot;&lt;/span&gt;, line 286, in &amp;lt;module&amp;gt;
+    main&lt;span class="o"&gt;()&lt;/span&gt;
+File &lt;span class="s2"&gt;&amp;quot;./qmp-shell&amp;quot;&lt;/span&gt;, line 272, in main
+    qemu.connect&lt;span class="o"&gt;()&lt;/span&gt;
+File &lt;span class="s2"&gt;&amp;quot;./qmp-shell&amp;quot;&lt;/span&gt;, line 134, in connect
+    self._greeting &lt;span class="o"&gt;=&lt;/span&gt; qmp.QEMUMonitorProtocol.connect&lt;span class="o"&gt;(&lt;/span&gt;self&lt;span class="o"&gt;)&lt;/span&gt;
+File &lt;span class="s2"&gt;&amp;quot;/root/xxoo/qmp.py&amp;quot;&lt;/span&gt;, line 87, in connect
+    &lt;span class="k"&gt;return &lt;/span&gt;self.__negotiate_capabilities&lt;span class="o"&gt;()&lt;/span&gt;
+File &lt;span class="s2"&gt;&amp;quot;/root/xxoo/qmp.py&amp;quot;&lt;/span&gt;, line 52, in __negotiate_capabilities
+    &lt;span class="nv"&gt;greeting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; self.__json_read&lt;span class="o"&gt;()&lt;/span&gt;
+File &lt;span class="s2"&gt;&amp;quot;/root/xxoo/qmp.py&amp;quot;&lt;/span&gt;, line 63, in __json_read
+    &lt;span class="nv"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; self.__sockfile.readline&lt;span class="o"&gt;()&lt;/span&gt;
+File &lt;span class="s2"&gt;&amp;quot;/usr/lib64/python2.6/socket.py&amp;quot;&lt;/span&gt;, line 450, in readline
+    &lt;span class="nv"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; self._sock.recv&lt;span class="o"&gt;(&lt;/span&gt;self._rbufsize&lt;span class="o"&gt;)&lt;/span&gt;
+KeyboardInterrupt
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;通过Python的异常栈可以看出是卡在了connect上！&lt;/p&gt;
+&lt;p&gt;看了会儿qemu的代码越陷越深，没有找到问题所在。但转念一想，如果连接qmp设备有问题，libvirt是不可能对qemu进行控制的&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# lsof | grep ooxx.monitor&lt;/span&gt;
+qemu-syst 37055 root    3u     unix 0xffff8802423a63c0         0t0  457961493 /usr/local/var/lib/libvirt/qemu/ooxx.monitor
+qemu-syst 37055 root   19u     unix 0xffff882027dac0c0         0t0  457961616 /usr/local/var/lib/libvirt/qemu/ooxx.monitor
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;对文件的引用可以看出ooxx.monitor已经存在一个连接了，如果没有猜错，这应该就是libvirt的连接！&lt;/p&gt;
+&lt;p&gt;而qmp设备可能有意只允许一个连接存在，所以造成了libvirt能操作qemu，而我的脚本无法连接上。进一步臆测一下，在实现上可能也没有用什么锁机制，只需要在进程/线程内listen/accept/recv就可以保证先来的连接独占设备了。&lt;/p&gt;
+&lt;p&gt;不看代码了，快速验证一下：&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# kill `cat /usr/local/var/run/libvirtd.pid` &lt;/span&gt;
+&lt;span class="c"&gt;# lsof | grep ooxx.monitor                  &lt;/span&gt;
+qemu-syst 37055 root    3u     unix 0xffff8802423a63c0         0t0  457961493 /usr/local/var/lib/libvirt/qemu/ooxx.monitor
+&lt;span class="c"&gt;# ./qmp-shell /usr/local/var/lib/libvirt/qemu/ooxx.monitor                  &lt;/span&gt;
+Welcome to the QMP low-level shell!
+Connected to QEMU 1.2.0
+
+&lt;span class="o"&gt;(&lt;/span&gt;QEMU&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;连上了，抱着激动的心情赶紧登录子机然后reboot, qmp-shell收到消息&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;{u&amp;#39;timestamp&amp;#39;: {u&amp;#39;seconds&amp;#39;: 1406685548, u&amp;#39;microseconds&amp;#39;: 610316}, u&amp;#39;data&amp;#39;: {u&amp;#39;offset&amp;#39;: -2}, u&amp;#39;event&amp;#39;: u&amp;#39;RTC_CHANGE&amp;#39;}
+{u&amp;#39;timestamp&amp;#39;: {u&amp;#39;seconds&amp;#39;: 1406685549, u&amp;#39;microseconds&amp;#39;: 50604}, u&amp;#39;event&amp;#39;: u&amp;#39;RESET&amp;#39;}
+{u&amp;#39;timestamp&amp;#39;: {u&amp;#39;seconds&amp;#39;: 1406685549, u&amp;#39;microseconds&amp;#39;: 88622}, u&amp;#39;event&amp;#39;: u&amp;#39;RESET&amp;#39;}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;但是，如果是要实际使用的话，我怎么敢杀死libvirtd的进程呢？&lt;/p&gt;
+&lt;p&gt;既然qmp的异步消息确实包括了我们想要的reboot事件，而连接又被libvirtd占据了，那libvirt是否有义务也返回个异步消息呢&lt;/p&gt;
+&lt;h2&gt;3. libvirt domain event&lt;/h2&gt;
+&lt;p&gt;虽然通读过几次libvirt的文档，但我从来不记得libvirt的api有异步消息的相关内容。&lt;/p&gt;
+&lt;p&gt;virsh里有几个qemu相关的命令字&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;qemu-attach                    QEMU Attach
+qemu-monitor-command           QEMU Monitor Command
+qemu-agent-command             QEMU Guest Agent Command
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;实测发现&lt;code&gt;qemu-monitor-command&lt;/code&gt;可以发送QMP命令，但并未返回QMP的异步消息&lt;/p&gt;
+&lt;p&gt;尝试不同的关键字搜索，未找到相关内容。&lt;/p&gt;
+&lt;p&gt;...只好打开libvirt的代码, 希望能找到libvirt对qmp异步消息的json消息体的处理&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# grep RESET * -r&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;输出好几屏，换个冷门的词&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# grep RTC_CHANGE * -r&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;找到文件&lt;code&gt;include/libvirt/libvirt.h&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;typedef&lt;/span&gt; &lt;span class="k"&gt;enum&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_LIFECYCLE&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;       &lt;span class="cm"&gt;/* virConnectDomainEventCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_REBOOT&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;          &lt;span class="cm"&gt;/* virConnectDomainEventGenericCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_RTC_CHANGE&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;      &lt;span class="cm"&gt;/* virConnectDomainEventRTCChangeCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_WATCHDOG&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;        &lt;span class="cm"&gt;/* virConnectDomainEventWatchdogCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_IO_ERROR&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;        &lt;span class="cm"&gt;/* virConnectDomainEventIOErrorCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_GRAPHICS&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;        &lt;span class="cm"&gt;/* virConnectDomainEventGraphicsCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;6&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="cm"&gt;/* virConnectDomainEventIOErrorReasonCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_CONTROL_ERROR&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;7&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;   &lt;span class="cm"&gt;/* virConnectDomainEventGenericCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_BLOCK_JOB&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;       &lt;span class="cm"&gt;/* virConnectDomainEventBlockJobCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_DISK_CHANGE&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;     &lt;span class="cm"&gt;/* virConnectDomainEventDiskChangeCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_TRAY_CHANGE&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;    &lt;span class="cm"&gt;/* virConnectDomainEventTrayChangeCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_PMWAKEUP&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;11&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;       &lt;span class="cm"&gt;/* virConnectDomainEventPMWakeupCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_PMSUSPEND&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;12&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;      &lt;span class="cm"&gt;/* virConnectDomainEventPMSuspendCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_BALLOON_CHANGE&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;13&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="cm"&gt;/* virConnectDomainEventBalloonChangeCallback */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_PMSUSPEND_DISK&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="cm"&gt;/* virConnectDomainEventPMSuspendDiskCallback */&lt;/span&gt;
+
+&lt;span class="cp"&gt;#ifdef VIR_ENUM_SENTINELS&lt;/span&gt;
+    &lt;span class="cm"&gt;/*   &lt;/span&gt;
+&lt;span class="cm"&gt;    * NB: this enum value will increase over time as new events are&lt;/span&gt;
+&lt;span class="cm"&gt;    * added to the libvirt API. It reflects the last event ID supported&lt;/span&gt;
+&lt;span class="cm"&gt;    * by this version of the libvirt API.&lt;/span&gt;
+&lt;span class="cm"&gt;    */&lt;/span&gt;
+    &lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_LAST&lt;/span&gt;
+&lt;span class="cp"&gt;#endif&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="n"&gt;virDomainEventID&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;原来qmp的异步消息在libvirt里叫&lt;code&gt;domain event&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# grep VIR_DOMAIN_EVENT_ID_RTC_CHANGE * -r&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;发现一个文件&lt;code&gt;examples/domain-events/events-c/event-test.c&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;竟然是如何使用libvirt domain event API的示例&lt;/p&gt;
+&lt;p&gt;甚至在同路径下还有Python的版本&lt;code&gt;examples/domain-events/events-python/event-test.py&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;event-test.py&lt;/code&gt;浅显易懂，比刚才的&lt;code&gt;qmp-shell&lt;/code&gt;容易改写多了，只用几分钟就写好了&lt;code&gt;my-reboot-event.py&lt;/code&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;libvirt&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;threading&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;time&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;init_loop&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;loop&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;libvirt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;virEventRunDefaultImpl&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;libvirt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;virEventRegisterDefaultImpl&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;eventLoopThread&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;threading&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Thread&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;target&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;loop&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;eventLoopThread&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setDaemon&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;eventLoopThread&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;start&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;care_about&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;dom&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;hook for control the custom reboot policy&amp;#39;&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;do_sth_you_like&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;dom&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;dom&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;destroy&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;reboot_callback&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;conn&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;dom&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;opaque&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;catch reboot event from dom[&lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;]&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;dom&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;care_about&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;dom&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt;
+    &lt;span class="n"&gt;do_sth_you_like&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;dom&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;let_me_go&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="n"&gt;uri&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;qemu:///system&amp;#39;&lt;/span&gt;
+    &lt;span class="n"&gt;init_loop&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;conn&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;libvirt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uri&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;conn&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;domainEventRegisterAny&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;libvirt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VIR_DOMAIN_EVENT_ID_REBOOT&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;reboot_callback&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;conn&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setKeepAlive&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="n"&gt;conn&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isAlive&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sleep&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;__main__&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;let_me_go&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;经过测试，一切正常。&lt;/p&gt;
+&lt;p&gt;顺便在OpenStack/nova代码里grep一下，nova已经在用libvirt domain event了，它监听了&lt;code&gt;libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE&lt;/code&gt;事件，它的回调函数将发生的事件通知给关注方。&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nd"&gt;@staticmethod&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_event_lifecycle_callback&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;conn&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;dom&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;event&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;detail&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;opaque&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Receives lifecycle events from libvirt.&lt;/span&gt;
+
+&lt;span class="sd"&gt;    NB: this method is executing in a native thread, not&lt;/span&gt;
+&lt;span class="sd"&gt;    an eventlet coroutine. It can only invoke other libvirt&lt;/span&gt;
+&lt;span class="sd"&gt;    APIs, or use self.queue_event(). Any use of logging APIs&lt;/span&gt;
+&lt;span class="sd"&gt;    in particular is forbidden.&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="bp"&gt;self&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;opaque&lt;/span&gt;
+
+    &lt;span class="n"&gt;uuid&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;dom&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;UUIDString&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;transition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;event&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;libvirt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VIR_DOMAIN_EVENT_STOPPED&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;transition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;virtevent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;EVENT_LIFECYCLE_STOPPED&lt;/span&gt;
+    &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="n"&gt;event&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;libvirt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VIR_DOMAIN_EVENT_STARTED&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;transition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;virtevent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;EVENT_LIFECYCLE_STARTED&lt;/span&gt;
+    &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="n"&gt;event&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;libvirt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VIR_DOMAIN_EVENT_SUSPENDED&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;transition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;virtevent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;EVENT_LIFECYCLE_PAUSED&lt;/span&gt;
+    &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="n"&gt;event&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;libvirt&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VIR_DOMAIN_EVENT_RESUMED&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;transition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;virtevent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;EVENT_LIFECYCLE_RESUMED&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;transition&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_queue_event&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;virtevent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;LifecycleEvent&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uuid&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;transition&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;4. THE END&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;搜索能力是解决问题能力的最重要组成部分&lt;/strong&gt;, 这次走了不少弯路。不过在源码中杀个七进七出，倒也给漫漫长夜增添了不少色彩。&lt;/p&gt;</summary><category term="云计算"></category><category term="虚拟化"></category><category term="qemu"></category><category term="kvm"></category><category term="libvirt"></category><category term="hook"></category></entry><entry><title>Hello, World</title><link href="/posts/misc/hello/" rel="alternate"></link><updated>2014-07-24T00:00:00+08:00</updated><author><name>lilinux</name></author><id>tag:,2014-07-24:posts/misc/hello/</id><summary type="html">&lt;p&gt;it's a c program&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#include &amp;lt;stdio.h&amp;gt;&lt;/span&gt;
+&lt;span class="cp"&gt;#include &amp;lt;stdlib.h&amp;gt;&lt;/span&gt;
+
+&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="nf"&gt;main&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;printf&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;hello world&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;</summary></entry></feed>

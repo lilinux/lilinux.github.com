@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8">
+    <title>Simple is Beautiful</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="lilinux">
+
+    <!-- Le styles -->
+    <link rel="stylesheet" href="/theme/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/chinese.css" type="text/css" />
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+      .tag-1 {
+        font-size: 13pt;
+      }
+      .tag-2 {
+        font-size: 10pt;
+      }
+      .tag-2 {
+        font-size: 8pt;
+      }
+      .tag-4 {
+        font-size: 6pt;
+     }
+    </style>
+    <link href="/theme/css/bootstrap-responsive.min.css" rel="stylesheet">
+        <link href="/theme/css/font-awesome.css" rel="stylesheet">
+
+    <link href="/theme/css/pygments.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="/theme/images/favicon.ico">
+    <link rel="apple-touch-icon" href="/theme/images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/theme/images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/theme/images/apple-touch-icon-114x114.png">
+
+    <link href="/" type="application/atom+xml" rel="alternate" title="Simple is Beautiful ATOM Feed" />
+
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="/index.html">Simple is Beautiful </a>
+          <div class="nav-collapse">
+            <ul class="nav">
+                <li><a href="/pages/about.html">About</a></li>
+                          <li class="divider-vertical"></li>
+                  <li >
+                    <a href="/category/cloud.html">
+						<i class="icon-folder-open icon-large"></i>Cloud
+					</a>
+                  </li>
+                  <li >
+                    <a href="/category/misc.html">
+						<i class="icon-folder-open icon-large"></i>misc
+					</a>
+                  </li>
+
+                          <ul class="nav pull-right">
+                                <li><a href="/archives.html"><i class="icon-th-list"></i>Archives</a></li>
+                          </ul>
+
+            </ul>
+            <!--<p class="navbar-text pull-right">Logged in as <a href="#">username</a></p>-->
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="span9" id="content">
+        <div class="article">
+                <h1><a href="/posts/cloud/qemu-reboot-hook/">KVM子机重启事件的hook探索</a></h1>
+                <div class="well small"><footer class="post-info">
+<span class="label">日期</span>
+<abbr class="published" title="2014-07-30T06:00:00">
+        <i class="icon-calendar"></i>2014-07-30 06:00:00
+</abbr>
+<span class="label">作者</span>
+<a href="/author/lilinux.html"><i class="icon-user"></i>lilinux</a>
+<span class="label">类别</span>
+<a href="/category/cloud.html"><i class="icon-folder-open"></i>Cloud</a>.
+
+
+<span class="label">标签</span>
+	<a href="/tag/yun-ji-suan.html"><i class="icon-tag"></i>云计算</a>
+	<a href="/tag/xu-ni-hua.html"><i class="icon-tag"></i>虚拟化</a>
+	<a href="/tag/qemu.html"><i class="icon-tag"></i>qemu</a>
+	<a href="/tag/kvm.html"><i class="icon-tag"></i>kvm</a>
+	<a href="/tag/libvirt.html"><i class="icon-tag"></i>libvirt</a>
+	<a href="/tag/hook.html"><i class="icon-tag"></i>hook</a>
+</footer><!-- /.post-info --></div>
+                <div class="summary"><h2>0. 背景</h2>
+<p>我们常说：<U><strong>优秀的架构是不断演化的</strong></U>。而演化方向是需要对服务的各方面指标进行衡量而确定的, 所以我们要<strong>收集一切可收集的，监控一切可监控的</strong>。</p>
+<p>前两天，工头跟我说: 能不能监控到用户KVM子机的reboot，这是流程以外的数据，我想拿来分析分析，<em>顺便做一些愉快的事</em></p>
+<p>工头还说: 最坏的打算是修改qemu代码，qemu自己肯定是知道这些事的，不过<strong>解决问题的方式有很多，我们只用最好的那个</strong></p>
+<p>那时我已经收好东西打算收工回家，无奈只好看了着我厂大门上写的<code>高高兴兴上班，平平安安回家</code>，然后回工位。(当然我也没有想到这个地方在若干个小时之后发生了名震天下的5p事件)</p>
+<h2>1. Libvirt Hook机制</h2>
+<p>libvirt的hook机制有点像iptables的hook机制，你可以在特定事件发生的前后对相关资源进行自定义的操作。比如在子机启动之前可以将子机所需要的资源准备好，在子机启动之后，再添加相应的防火墙规则。</p>
+<p>hook的方式很简单，在指定的位置放上可执行文件就好，在hook点到达时libvirtd会调用这个可执行文件。</p>
+<p>只是对子机重启来说，我有充分理由怀疑这种略显粗糙的方式(调用脚本，传递有限的参数)是否会支持，因为至少启动子机表示了qemu进程的创建，停止子机表示了qemu进程的终止，而子机重启并不会在qemu进程及其使用的资源上有什么变化。也就是说，比起启动和停止，重启本身更难被粗糙的方式观察到。</p>
+<p>打开libvirt的<a href="http://www.libvirt.org/hooks.html">hook文档 ...</a></p>
+                        <a class="btn primary xsmall" href="/posts/cloud/qemu-reboot-hook/">阅读更多 ...</a>
+                </div>
+        </div>
+        <hr />
+        <div class="article">
+                <h1><a href="/posts/misc/hello/">Hello, World</a></h1>
+                <div class="well small"><footer class="post-info">
+<span class="label">日期</span>
+<abbr class="published" title="2014-07-24T00:00:00">
+        <i class="icon-calendar"></i>2014-07-24 00:00:00
+</abbr>
+<span class="label">作者</span>
+<a href="/author/lilinux.html"><i class="icon-user"></i>lilinux</a>
+<span class="label">类别</span>
+<a href="/category/misc.html"><i class="icon-folder-open"></i>misc</a>.
+
+
+</footer><!-- /.post-info --></div>
+                <div class="summary"><p>it's a c program</p>
+<div class="highlight"><pre><span class="cp">#include &lt;stdio.h&gt;</span>
+<span class="cp">#include &lt;stdlib.h&gt;</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;hello world</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+                        <a class="btn primary xsmall" href="/posts/misc/hello/">阅读更多 ...</a>
+                </div>
+        </div>
+        <hr />
+
+                <section id="content" class="body">
+                <h1>Pages</h1>
+                        <li><a href="/pages/about.html">About</a></li>
+                </section>
+        </div><!--/span-->
+
+                <div class="span3 well sidebar-nav" id="sidebar">
+<ul class="nav nav-list">
+<li class="nav-header"><h4><i class="icon-external-link"></i> 链接</h4></li>
+    <li><a href="http://qcloud.com/"><i class="icon-external-link"></i>QCloud</a></li>
+
+<li class="nav-header"><h4><i class="icon-folder-close icon-large"></i> 类别</h4></li>
+<li>
+<a href="/category/cloud.html">
+    <i class="icon-folder-open icon-large"></i>Cloud
+</a>
+</li>
+<li>
+<a href="/category/misc.html">
+    <i class="icon-folder-open icon-large"></i>misc
+</a>
+</li>
+
+<li class="nav-header"><h4><i class="icon-tags icon-large"></i> 标签</h4></li>
+<li class="tag-4">
+    <a href="/tag/hook.html">
+        <i class="icon-tag icon-large"></i>hook
+    </a>
+</li>
+<li class="tag-4">
+    <a href="/tag/yun-ji-suan.html">
+        <i class="icon-tag icon-large"></i>云计算
+    </a>
+</li>
+<li class="tag-4">
+    <a href="/tag/kvm.html">
+        <i class="icon-tag icon-large"></i>kvm
+    </a>
+</li>
+<li class="tag-4">
+    <a href="/tag/xu-ni-hua.html">
+        <i class="icon-tag icon-large"></i>虚拟化
+    </a>
+</li>
+<li class="tag-4">
+    <a href="/tag/libvirt.html">
+        <i class="icon-tag icon-large"></i>libvirt
+    </a>
+</li>
+<li class="tag-4">
+    <a href="/tag/qemu.html">
+        <i class="icon-tag icon-large"></i>qemu
+    </a>
+</li>
+
+
+    <iframe width="100%" height="550" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=550&fansRow=2&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1816173632&verifier=f2e5e0d3&dpc=1"></iframe>
+</ul>        </div><!--/.well -->
+
+      </div><!--/row-->
+
+      <hr>
+
+      <footer>
+        <address id="about">
+                Proudly powered by <a href="http://pelican.notmyidea.org/">Pelican <i class="icon-external-link"></i></a>,
+                                which takes great advantage of <a href="http://python.org">Python <i class="icon-external-link"></i></a>.
+        </address><!-- /#about -->
+
+        <p>The theme is from <a href="http://twitter.github.com/bootstrap/">Bootstrap from Twitter <i class="icon-external-link"></i></a>,
+                   and <a href="http://fortawesome.github.com/Font-Awesome/">Font-Awesome <i class="icon-external-link"></i></a>, thanks!</p>
+      </footer>
+
+    </div><!--/.fluid-container-->
+
+
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+	var pageTracker = _gat._getTracker("UA-53342762-1");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+<script type="text/javascript">
+    var disqus_shortname = 'lilinux-blog';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+
+    <!-- Le javascript -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/theme/js/jquery-1.7.2.min.js"></script>
+    <script src="/theme/js/bootstrap.min.js"></script>
+  </body>
+</html>
