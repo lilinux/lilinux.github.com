@@ -335,7 +335,157 @@ qemu-agent-command             QEMU Guest Agent Command
 
 
 &lt;h2&gt;4. THE END&lt;/h2&gt;
-&lt;p&gt;&lt;a href="#soup_search"&gt;&lt;strong&gt;搜索能力是解决问题能力的最重要组成部分&lt;/strong&gt;&lt;/a&gt;, 这次走了不少弯路。不过在源码中杀个七进七出，倒也给漫漫长夜增添了不少色彩。&lt;/p&gt;</summary><category term="云计算"></category><category term="虚拟化"></category><category term="qemu"></category><category term="kvm"></category><category term="libvirt"></category><category term="hook"></category></entry><entry><title>Hello, World</title><link href="http://blog.lilinux.com/posts/misc/hello/" rel="alternate"></link><updated>2014-07-24T00:00:00+08:00</updated><author><name>lilinux</name></author><id>tag:blog.lilinux.com,2014-07-24:posts/misc/hello/</id><summary type="html">&lt;p&gt;it's a c program&lt;/p&gt;
+&lt;p&gt;&lt;a href="#soup_search"&gt;&lt;strong&gt;搜索能力是解决问题能力的最重要组成部分&lt;/strong&gt;&lt;/a&gt;, 这次走了不少弯路。不过在源码中杀个七进七出，倒也给漫漫长夜增添了不少色彩。&lt;/p&gt;</summary><category term="云计算"></category><category term="虚拟化"></category><category term="qemu"></category><category term="kvm"></category><category term="libvirt"></category><category term="hook"></category></entry><entry><title>小米手机轮询是否有货脚本</title><link href="http://blog.lilinux.com/posts/fun/xiao-mi-shou-ji-lun-xun-shi-fou-you-huo-jiao-ben/" rel="alternate"></link><updated>2014-07-01T12:30:00+08:00</updated><author><name>lilinux</name></author><id>tag:blog.lilinux.com,2014-07-01:posts/fun/xiao-mi-shou-ji-lun-xun-shi-fou-you-huo-jiao-ben/</id><summary type="html">&lt;p&gt;&lt;code&gt;一入电信深似海，从此手机不好买&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;自从用了电信号，终端设备就成了我的一块心病。自从那天我的烧号iphone4在没有开启飞行模式的时候飞行了十来米之后，我就知道这个问题又要困扰我了。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;买个小米3吧&lt;/code&gt;，大家都这么说。支持cdma2000，价钱不贵，而且还开放购买了。对我来说，这几乎是唯一的选择了。&lt;/p&gt;
+&lt;p&gt;然后我打开&lt;a href="http://www.mi.com/buyphone/mi3"&gt;小米3购买页面&lt;/a&gt;一看，电信版的居然无货：&lt;/p&gt;
+&lt;p&gt;&lt;img alt="xiaomi3-page" src="http://blog.lilinux.com/images/xiaomi3.png" /&gt;&lt;/p&gt;
+&lt;p&gt;( &lt;em&gt;修改图片位置&lt;/em&gt; ）&lt;/p&gt;
+&lt;p&gt;一周以来，陆续开了好几次，都是无货&lt;/p&gt;
+&lt;p&gt;直到有一天，突然发现有货。但等我购买时，又卖完了！&lt;/p&gt;
+&lt;p&gt;好在我年前在写&lt;a href="https://github.com/lilinux/piao"&gt;12306购票api&lt;/a&gt;时积累了丰富的经验，打算写个&lt;strong&gt;当有货时自动打开页面或通知我&lt;/strong&gt;的脚本。&lt;/p&gt;
+&lt;p&gt;首先，分析下页面展示是否有货的依据是什么？&lt;/p&gt;
+&lt;p&gt;查看购买页面的源码，有这么一段&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nx"&gt;version_3&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="c1"&gt;//名字&lt;/span&gt;
+    &lt;span class="nx"&gt;title&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;电信版&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="c1"&gt;//描述&lt;/span&gt;
+    &lt;span class="nx"&gt;descp&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;支持电信、联通3G网络&amp;lt;br&amp;gt;同时支持电信、移动、联通2G网络&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="c1"&gt;//是否缺货&lt;/span&gt;
+    &lt;span class="nx"&gt;isLack&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="c1"&gt;//是否推荐&lt;/span&gt;
+    &lt;span class="nx"&gt;isPush&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="c1"&gt;//提示信息&lt;/span&gt;
+    &lt;span class="nx"&gt;tipInfo&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;为手机挑选合适的配件方案&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="c1"&gt;//容量&lt;/span&gt;
+    &lt;span class="nx"&gt;capacity&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nx"&gt;cap_1&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="nx"&gt;title&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;16GB&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="nx"&gt;descp&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;高通全系列最强GPU Adreno330&amp;lt;br&amp;gt;&amp;lt;i&amp;gt;特价：1499元&amp;lt;/i&amp;gt; &amp;lt;del&amp;gt;原价：1999元&amp;lt;/del&amp;gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+             &lt;span class="c1"&gt;//是否缺货&lt;/span&gt;
+            &lt;span class="nx"&gt;isLack&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="c1"&gt;//是否推荐&lt;/span&gt;
+            &lt;span class="nx"&gt;isPush&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="c1"&gt;//提示信息&lt;/span&gt;
+            &lt;span class="nx"&gt;tipInfo&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;选择配件优惠套装&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="c1"&gt;//是否添加跳转连接&lt;/span&gt;
+            &lt;span class="nx"&gt;isHref&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="nx"&gt;hrefUrl&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;http://s1.mi.com/open/index.html#phone&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="nx"&gt;color&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+                &lt;span class="nx"&gt;color_1&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="nx"&gt;title&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;纯白色&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="nx"&gt;descp&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;高光亮色&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="nx"&gt;imgUrl&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;http://img03.mifile.cn/webfile/images/2014/cn/buyphone/mi3-bai.png&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="nx"&gt;hrefUrl&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;http://order.mi.com/event/selectPacket/goodsid/2141000021&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="c1"&gt;//是否缺货&lt;/span&gt;
+                    &lt;span class="nx"&gt;isLack&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="c1"&gt;//是否推荐&lt;/span&gt;
+                    &lt;span class="nx"&gt;isPush&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;false&lt;/span&gt;
+                &lt;span class="p"&gt;},&lt;/span&gt;
+                &lt;span class="nx"&gt;color_2&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="nx"&gt;title&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;星空灰&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="nx"&gt;descp&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;亚光磨砂&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="nx"&gt;imgUrl&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;http://img03.mifile.cn/webfile/images/2014/cn/buyphone/mi3-hui.png&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="nx"&gt;hrefUrl&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;http://order.mi.com/event/selectPacket/goodsid/2140800022&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="c1"&gt;//是否缺货&lt;/span&gt;
+                    &lt;span class="nx"&gt;isLack&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="c1"&gt;//是否推荐&lt;/span&gt;
+                    &lt;span class="nx"&gt;isPush&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;false&lt;/span&gt;
+                &lt;span class="p"&gt;},&lt;/span&gt;
+                &lt;span class="nx"&gt;color_3&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+                    &lt;span class="nx"&gt;title&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;银灰色&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="nx"&gt;descp&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;亚光磨砂&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="nx"&gt;imgUrl&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;http://img03.mifile.cn/webfile/images/2014/cn/buyphone/mi3-yin.png&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="nx"&gt;hrefUrl&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;http://order.mi.com/event/selectPacket/goodsid/2141300016&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="c1"&gt;//是否缺货&lt;/span&gt;
+                    &lt;span class="nx"&gt;isLack&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="c1"&gt;//是否推荐&lt;/span&gt;
+                    &lt;span class="nx"&gt;isPush&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="kc"&gt;false&lt;/span&gt;
+                &lt;span class="p"&gt;}&lt;/span&gt;
+            &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;},&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;太好了，都不用额外下载其它的文件。&lt;/p&gt;
+&lt;p&gt;然后我马上写了一个写完就扔的脚本&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;#!/usr/bin/env python&lt;/span&gt;
+&lt;span class="c"&gt;#-*-coding: utf-8 -*-&lt;/span&gt;
+
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;time&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;urllib2&lt;/span&gt;
+
+&lt;span class="n"&gt;url&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;http://www.mi.com/buyphone/mi3&amp;#39;&lt;/span&gt;
+&lt;span class="c"&gt;#proxy = &amp;#39;http://proxy.xxoo.com:8080&amp;#39;&lt;/span&gt;
+&lt;span class="n"&gt;proxy&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;proxy&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;ph&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;urllib2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ProxyHandler&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;http&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;proxy&lt;/span&gt;&lt;span class="p"&gt;})&lt;/span&gt;
+    &lt;span class="n"&gt;opener&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;urllib2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;build_opener&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ph&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;urllib2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;install_opener&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;opener&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_html&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;urllib2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;urlopen&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;read&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;line_value&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&amp;quot;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rfind&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&amp;quot;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)]&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;parse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;html&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;result&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+    &lt;span class="n"&gt;op&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;size&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;color&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;all&amp;#39;&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;html&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;split&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;title:&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;line_value&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;endswith&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;版&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                &lt;span class="n"&gt;op&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;value&lt;/span&gt;
+                &lt;span class="n"&gt;size&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;color&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;all&amp;#39;&lt;/span&gt;
+            &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;endswith&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;GB&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+                &lt;span class="n"&gt;size&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;value&lt;/span&gt;
+                &lt;span class="n"&gt;color&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;all&amp;#39;&lt;/span&gt;
+            &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;color&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;value&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;isLack:&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;is_lack&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;true&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+            &lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;-&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;join&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="n"&gt;op&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;size&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;color&lt;/span&gt;&lt;span class="p"&gt;)),&lt;/span&gt; &lt;span class="n"&gt;is_lack&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;result&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;is_ok&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;d&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;dict&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;d&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;电信版-all-all&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;d&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;电信版-16GB-all&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;notify&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
+    &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;system&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;start chrome &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;loop&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ctime&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="n"&gt;result&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;parse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;get_html&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;j&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;print&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;&lt;/span&gt;&lt;span class="se"&gt;\t\t&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;j&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;is_ok&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;result&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+            &lt;span class="n"&gt;notify&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+            &lt;span class="k"&gt;break&lt;/span&gt;
+        &lt;span class="n"&gt;time&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sleep&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;60&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;__main__&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;loop&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;code&gt;loop&lt;/code&gt;是主轮询逻辑，每分钟查询一次。获取到页面后分析是否有货，如果有货就调用&lt;code&gt;notify&lt;/code&gt;通知。&lt;/p&gt;
+&lt;p&gt;脚本编写一共花了约30分钟，先让它跑两天看看。虽然有很多不完善的地方，比如&lt;code&gt;notify&lt;/code&gt;和&lt;code&gt;parse&lt;/code&gt;都很weak。&lt;/p&gt;
+&lt;p&gt;第二天上午我正在埋头写代码，突然弹出这个购买页面，然后我就买到小米3了。&lt;/p&gt;
+&lt;p&gt;时间是&lt;code&gt;2014年07月01日 09:48&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;代码也就再也没去优化。&lt;/p&gt;</summary><category term="Python"></category><category term="爬虫"></category><category term="urllib"></category><category term="抢购"></category></entry><entry><title>Hello, World</title><link href="http://blog.lilinux.com/posts/misc/hello/" rel="alternate"></link><updated>2014-06-24T00:00:00+08:00</updated><author><name>lilinux</name></author><id>tag:blog.lilinux.com,2014-06-24:posts/misc/hello/</id><summary type="html">&lt;p&gt;it's a c program&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#include &amp;lt;stdio.h&amp;gt;&lt;/span&gt;
 &lt;span class="cp"&gt;#include &amp;lt;stdlib.h&amp;gt;&lt;/span&gt;
 

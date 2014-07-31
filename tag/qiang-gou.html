@@ -2,7 +2,7 @@
 <html lang="zh">
   <head>
     <meta charset="utf-8">
-    <title>Simple is Beautiful</title>
+    <title>Simple is Beautiful - 抢购</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="lilinux">
@@ -96,18 +96,52 @@
     <div class="container-fluid">
       <div class="row">
         <div class="span9" id="content">
-<section id="content">
-<h1>Archives for "Simple is Beautiful"</h1>
+        <div class="article">
+                <h1><a href="http://blog.lilinux.com/posts/fun/xiao-mi-shou-ji-lun-xun-shi-fou-you-huo-jiao-ben/">小米手机轮询是否有货脚本</a></h1>
+                <div class="well small"><footer class="post-info">
+<span class="label">日期</span>
+<abbr class="published" title="2014-07-01T12:30:00">
+        <i class="icon-calendar"></i>2014-07-01 12:30:00
+</abbr>
+<span class="label">作者</span>
+<a href="http://blog.lilinux.com/author/lilinux.html"><i class="icon-user"></i>lilinux</a>
+<span class="label">类别</span>
+<a href="http://blog.lilinux.com/category/fun.html"><i class="icon-folder-open"></i>Fun</a>.
 
-<dl>
-	<dt>2014-07-30 06:00:00</dt>
-	<dd><a href='posts/cloud/qemu-reboot-hook/'>KVM子机重启事件的hook探索</a></dd>
-	<dt>2014-07-01 12:30:00</dt>
-	<dd><a href='posts/fun/xiao-mi-shou-ji-lun-xun-shi-fou-you-huo-jiao-ben/'>小米手机轮询是否有货脚本</a></dd>
-	<dt>2014-06-24 00:00:00</dt>
-	<dd><a href='posts/misc/hello/'>Hello, World</a></dd>
-</dl>
-</section>
+
+<span class="label">标签</span>
+	<a href="http://blog.lilinux.com/tag/python.html"><i class="icon-tag"></i>Python</a>
+	<a href="http://blog.lilinux.com/tag/pa-chong.html"><i class="icon-tag"></i>爬虫</a>
+	<a href="http://blog.lilinux.com/tag/urllib.html"><i class="icon-tag"></i>urllib</a>
+	<a href="http://blog.lilinux.com/tag/qiang-gou.html"><i class="icon-tag"></i>抢购</a>
+</footer><!-- /.post-info --></div>
+                <div class="summary"><p><code>一入电信深似海，从此手机不好买</code></p>
+<p>自从用了电信号，终端设备就成了我的一块心病。自从那天我的烧号iphone4在没有开启飞行模式的时候飞行了十来米之后，我就知道这个问题又要困扰我了。</p>
+<p><code>买个小米3吧</code>，大家都这么说。支持cdma2000，价钱不贵，而且还开放购买了。对我来说，这几乎是唯一的选择了。</p>
+<p>然后我打开<a href="http://www.mi.com/buyphone/mi3">小米3购买页面</a>一看，电信版的居然无货：</p>
+<p><img alt="xiaomi3-page" src="http://blog.lilinux.com/images/xiaomi3.png" /></p>
+<p>( <em>修改图片位置</em> ）</p>
+<p>一周以来，陆续开了好几次，都是无货</p>
+<p>直到有一天，突然发现有货。但等我购买时，又卖完了！</p>
+<p>好在我年前在写<a href="https://github.com/lilinux/piao">12306购票api</a>时积累了丰富的经验，打算写个<strong>当有货时自动打开页面或通知我</strong>的脚本。</p>
+<p>首先，分析下页面展示是否有货的依据是什么？</p>
+<p>查看购买页面的源码，有这么一段</p>
+<div class="highlight"><pre><span class="nx">version_3</span><span class="o">:</span><span class="p">{</span>
+    <span class="c1">//名字</span>
+    <span class="nx">title</span><span class="o">:</span><span class="s2">&quot;电信版&quot;</span><span class="p">,</span>
+    <span class="c1">//描述</span>
+    <span class="nx">descp</span><span class="o">:</span><span class="s2">&quot;支持电信、联通3G网络&lt;br&gt;同时支持电信、移动、联通2G网络&quot;</span><span class="p">,</span>
+    <span class="c1">//是否缺货</span>
+    <span class="nx">isLack</span><span class="o">:</span><span class="kc">false ...</span></pre></div>
+                        <a class="btn primary xsmall" href="http://blog.lilinux.com/posts/fun/xiao-mi-shou-ji-lun-xun-shi-fou-you-huo-jiao-ben/">阅读更多 ...</a>
+                </div>
+        </div>
+        <hr />
+
+                <section id="content" class="body">
+                <h1>Pages</h1>
+                        <li><a href="http://blog.lilinux.com/pages/about.html">About</a></li>
+                </section>
         </div><!--/span-->
 
                 <div class="span3 well sidebar-nav" id="sidebar">

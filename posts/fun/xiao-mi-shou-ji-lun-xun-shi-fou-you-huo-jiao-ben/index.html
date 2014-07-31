@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8">
+    <title>小米手机轮询是否有货脚本</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="lilinux">
+
+    <!-- Le styles -->
+    <link rel="stylesheet" href="http://blog.lilinux.com/theme/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="http://blog.lilinux.com/theme/css/chinese.css" type="text/css" />
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+      .tag-1 {
+        font-size: 13pt;
+      }
+      .tag-2 {
+        font-size: 10pt;
+      }
+      .tag-2 {
+        font-size: 8pt;
+      }
+      .tag-4 {
+        font-size: 6pt;
+     }
+    </style>
+    <link href="http://blog.lilinux.com/theme/css/bootstrap-responsive.min.css" rel="stylesheet">
+        <link href="http://blog.lilinux.com/theme/css/font-awesome.css" rel="stylesheet">
+
+    <link href="http://blog.lilinux.com/theme/css/pygments.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="http://blog.lilinux.com/theme/images/favicon.ico">
+    <link rel="apple-touch-icon" href="http://blog.lilinux.com/theme/images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="http://blog.lilinux.com/theme/images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="http://blog.lilinux.com/theme/images/apple-touch-icon-114x114.png">
+
+    <link href="http://blog.lilinux.com/" type="application/atom+xml" rel="alternate" title="Simple is Beautiful ATOM Feed" />
+
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="http://blog.lilinux.com/index.html">Simple is Beautiful </a>
+          <div class="nav-collapse">
+            <ul class="nav">
+                <li><a href="http://blog.lilinux.com/pages/about.html">About</a></li>
+                          <li class="divider-vertical"></li>
+                  <li >
+                    <a href="http://blog.lilinux.com/category/cloud.html">
+						<i class="icon-folder-open icon-large"></i>Cloud
+					</a>
+                  </li>
+                  <li class="active">
+                    <a href="http://blog.lilinux.com/category/fun.html">
+						<i class="icon-folder-open icon-large"></i>Fun
+					</a>
+                  </li>
+                  <li >
+                    <a href="http://blog.lilinux.com/category/misc.html">
+						<i class="icon-folder-open icon-large"></i>misc
+					</a>
+                  </li>
+
+                          <ul class="nav pull-right">
+                                <li><a href="http://blog.lilinux.com/archives.html"><i class="icon-th-list"></i>Archives</a></li>
+                          </ul>
+
+            </ul>
+            <!--<p class="navbar-text pull-right">Logged in as <a href="#">username</a></p>-->
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="span9" id="content">
+<section id="content">
+        <article>
+                <header>
+                        <h1>
+                                <a href=""
+                                        rel="bookmark"
+                                        title="Permalink to 小米手机轮询是否有货脚本">
+                                        小米手机轮询是否有货脚本
+                                </a>
+                        </h1>
+                </header>
+                <div class="entry-content">
+                <div class="well">
+<footer class="post-info">
+<span class="label">日期</span>
+<abbr class="published" title="2014-07-01T12:30:00">
+        <i class="icon-calendar"></i>2014-07-01 12:30:00
+</abbr>
+<span class="label">作者</span>
+<a href="http://blog.lilinux.com/author/lilinux.html"><i class="icon-user"></i>lilinux</a>
+<span class="label">类别</span>
+<a href="http://blog.lilinux.com/category/fun.html"><i class="icon-folder-open"></i>Fun</a>.
+
+
+<span class="label">标签</span>
+	<a href="http://blog.lilinux.com/tag/python.html"><i class="icon-tag"></i>Python</a>
+	<a href="http://blog.lilinux.com/tag/pa-chong.html"><i class="icon-tag"></i>爬虫</a>
+	<a href="http://blog.lilinux.com/tag/urllib.html"><i class="icon-tag"></i>urllib</a>
+	<a href="http://blog.lilinux.com/tag/qiang-gou.html"><i class="icon-tag"></i>抢购</a>
+</footer><!-- /.post-info -->                </div>
+		<p class='post-footer'>
+		原文地址：<a href='http://blog.lilinux.com/posts/fun/xiao-mi-shou-ji-lun-xun-shi-fou-you-huo-jiao-ben/'>http://blog.lilinux.com/posts/fun/xiao-mi-shou-ji-lun-xun-shi-fou-you-huo-jiao-ben/</a><br/>
+		版权声明：自由转载-非商用-非衍生-保持署名| <a href='http://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh'>Creative Commons BY-NC-ND 3.0</a></p>
+                <p><code>一入电信深似海，从此手机不好买</code></p>
+<p>自从用了电信号，终端设备就成了我的一块心病。自从那天我的烧号iphone4在没有开启飞行模式的时候飞行了十来米之后，我就知道这个问题又要困扰我了。</p>
+<p><code>买个小米3吧</code>，大家都这么说。支持cdma2000，价钱不贵，而且还开放购买了。对我来说，这几乎是唯一的选择了。</p>
+<p>然后我打开<a href="http://www.mi.com/buyphone/mi3">小米3购买页面</a>一看，电信版的居然无货：</p>
+<p><img alt="xiaomi3-page" src="http://blog.lilinux.com/images/xiaomi3.png" /></p>
+<p>( <em>修改图片位置</em> ）</p>
+<p>一周以来，陆续开了好几次，都是无货</p>
+<p>直到有一天，突然发现有货。但等我购买时，又卖完了！</p>
+<p>好在我年前在写<a href="https://github.com/lilinux/piao">12306购票api</a>时积累了丰富的经验，打算写个<strong>当有货时自动打开页面或通知我</strong>的脚本。</p>
+<p>首先，分析下页面展示是否有货的依据是什么？</p>
+<p>查看购买页面的源码，有这么一段</p>
+<div class="highlight"><pre><span class="nx">version_3</span><span class="o">:</span><span class="p">{</span>
+    <span class="c1">//名字</span>
+    <span class="nx">title</span><span class="o">:</span><span class="s2">&quot;电信版&quot;</span><span class="p">,</span>
+    <span class="c1">//描述</span>
+    <span class="nx">descp</span><span class="o">:</span><span class="s2">&quot;支持电信、联通3G网络&lt;br&gt;同时支持电信、移动、联通2G网络&quot;</span><span class="p">,</span>
+    <span class="c1">//是否缺货</span>
+    <span class="nx">isLack</span><span class="o">:</span><span class="kc">false</span><span class="p">,</span>
+    <span class="c1">//是否推荐</span>
+    <span class="nx">isPush</span><span class="o">:</span><span class="kc">false</span><span class="p">,</span>
+    <span class="c1">//提示信息</span>
+    <span class="nx">tipInfo</span><span class="o">:</span><span class="s2">&quot;为手机挑选合适的配件方案&quot;</span><span class="p">,</span>
+    <span class="c1">//容量</span>
+    <span class="nx">capacity</span><span class="o">:</span><span class="p">{</span>
+        <span class="nx">cap_1</span><span class="o">:</span><span class="p">{</span>
+            <span class="nx">title</span><span class="o">:</span><span class="s2">&quot;16GB&quot;</span><span class="p">,</span>
+            <span class="nx">descp</span><span class="o">:</span><span class="s2">&quot;高通全系列最强GPU Adreno330&lt;br&gt;&lt;i&gt;特价：1499元&lt;/i&gt; &lt;del&gt;原价：1999元&lt;/del&gt;&quot;</span><span class="p">,</span>
+             <span class="c1">//是否缺货</span>
+            <span class="nx">isLack</span><span class="o">:</span><span class="kc">true</span><span class="p">,</span>
+            <span class="c1">//是否推荐</span>
+            <span class="nx">isPush</span><span class="o">:</span><span class="kc">false</span><span class="p">,</span>
+            <span class="c1">//提示信息</span>
+            <span class="nx">tipInfo</span><span class="o">:</span><span class="s2">&quot;选择配件优惠套装&quot;</span><span class="p">,</span>
+            <span class="c1">//是否添加跳转连接</span>
+            <span class="nx">isHref</span><span class="o">:</span><span class="kc">false</span><span class="p">,</span>
+            <span class="nx">hrefUrl</span><span class="o">:</span><span class="s2">&quot;http://s1.mi.com/open/index.html#phone&quot;</span><span class="p">,</span>
+            <span class="nx">color</span><span class="o">:</span><span class="p">{</span>
+                <span class="nx">color_1</span><span class="o">:</span><span class="p">{</span>
+                    <span class="nx">title</span><span class="o">:</span><span class="s2">&quot;纯白色&quot;</span><span class="p">,</span>
+                    <span class="nx">descp</span><span class="o">:</span><span class="s2">&quot;高光亮色&quot;</span><span class="p">,</span>
+                    <span class="nx">imgUrl</span><span class="o">:</span><span class="s2">&quot;http://img03.mifile.cn/webfile/images/2014/cn/buyphone/mi3-bai.png&quot;</span><span class="p">,</span>
+                    <span class="nx">hrefUrl</span><span class="o">:</span><span class="s2">&quot;http://order.mi.com/event/selectPacket/goodsid/2141000021&quot;</span><span class="p">,</span>
+                    <span class="c1">//是否缺货</span>
+                    <span class="nx">isLack</span><span class="o">:</span><span class="kc">true</span><span class="p">,</span>
+                    <span class="c1">//是否推荐</span>
+                    <span class="nx">isPush</span><span class="o">:</span><span class="kc">false</span>
+                <span class="p">},</span>
+                <span class="nx">color_2</span><span class="o">:</span><span class="p">{</span>
+                    <span class="nx">title</span><span class="o">:</span><span class="s2">&quot;星空灰&quot;</span><span class="p">,</span>
+                    <span class="nx">descp</span><span class="o">:</span><span class="s2">&quot;亚光磨砂&quot;</span><span class="p">,</span>
+                    <span class="nx">imgUrl</span><span class="o">:</span><span class="s2">&quot;http://img03.mifile.cn/webfile/images/2014/cn/buyphone/mi3-hui.png&quot;</span><span class="p">,</span>
+                    <span class="nx">hrefUrl</span><span class="o">:</span><span class="s2">&quot;http://order.mi.com/event/selectPacket/goodsid/2140800022&quot;</span><span class="p">,</span>
+                    <span class="c1">//是否缺货</span>
+                    <span class="nx">isLack</span><span class="o">:</span><span class="kc">true</span><span class="p">,</span>
+                    <span class="c1">//是否推荐</span>
+                    <span class="nx">isPush</span><span class="o">:</span><span class="kc">false</span>
+                <span class="p">},</span>
+                <span class="nx">color_3</span><span class="o">:</span><span class="p">{</span>
+                    <span class="nx">title</span><span class="o">:</span><span class="s2">&quot;银灰色&quot;</span><span class="p">,</span>
+                    <span class="nx">descp</span><span class="o">:</span><span class="s2">&quot;亚光磨砂&quot;</span><span class="p">,</span>
+                    <span class="nx">imgUrl</span><span class="o">:</span><span class="s2">&quot;http://img03.mifile.cn/webfile/images/2014/cn/buyphone/mi3-yin.png&quot;</span><span class="p">,</span>
+                    <span class="nx">hrefUrl</span><span class="o">:</span><span class="s2">&quot;http://order.mi.com/event/selectPacket/goodsid/2141300016&quot;</span><span class="p">,</span>
+                    <span class="c1">//是否缺货</span>
+                    <span class="nx">isLack</span><span class="o">:</span><span class="kc">true</span><span class="p">,</span>
+                    <span class="c1">//是否推荐</span>
+                    <span class="nx">isPush</span><span class="o">:</span><span class="kc">false</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">},</span>
+</pre></div>
+
+
+<p>太好了，都不用额外下载其它的文件。</p>
+<p>然后我马上写了一个写完就扔的脚本</p>
+<div class="highlight"><pre><span class="c">#!/usr/bin/env python</span>
+<span class="c">#-*-coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">urllib2</span>
+
+<span class="n">url</span> <span class="o">=</span><span class="s">&#39;http://www.mi.com/buyphone/mi3&#39;</span>
+<span class="c">#proxy = &#39;http://proxy.xxoo.com:8080&#39;</span>
+<span class="n">proxy</span> <span class="o">=</span> <span class="bp">None</span>
+
+<span class="k">if</span> <span class="n">proxy</span><span class="p">:</span>
+    <span class="n">ph</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">ProxyHandler</span><span class="p">({</span><span class="s">&#39;http&#39;</span><span class="p">:</span> <span class="n">proxy</span><span class="p">})</span>
+    <span class="n">opener</span><span class="o">=</span><span class="n">urllib2</span><span class="o">.</span><span class="n">build_opener</span><span class="p">(</span><span class="n">ph</span><span class="p">)</span>
+    <span class="n">urllib2</span><span class="o">.</span><span class="n">install_opener</span><span class="p">(</span><span class="n">opener</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_html</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">line_value</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">line</span><span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span><span class="n">line</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">)]</span>
+
+
+<span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">html</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">op</span> <span class="o">=</span> <span class="n">size</span> <span class="o">=</span> <span class="n">color</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">html</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;title:&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">line_value</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;版&#39;</span><span class="p">):</span>
+                <span class="n">op</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">color</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span>
+            <span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;GB&#39;</span><span class="p">):</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;isLack:&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">is_lack</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;true&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">op</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">color</span><span class="p">)),</span> <span class="n">is_lack</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span> <span class="nf">is_ok</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;电信版-all-all&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;电信版-16GB-all&#39;</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">notify</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;start chrome </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">url</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">loop</span><span class="p">():</span>
+    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">print</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">()</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="n">get_html</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">print</span> <span class="n">i</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\t\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">j</span>
+        <span class="k">if</span> <span class="n">is_ok</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+            <span class="n">notify</span><span class="p">()</span>
+            <span class="k">break</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">loop</span><span class="p">()</span>
+</pre></div>
+
+
+<p><code>loop</code>是主轮询逻辑，每分钟查询一次。获取到页面后分析是否有货，如果有货就调用<code>notify</code>通知。</p>
+<p>脚本编写一共花了约30分钟，先让它跑两天看看。虽然有很多不完善的地方，比如<code>notify</code>和<code>parse</code>都很weak。</p>
+<p>第二天上午我正在埋头写代码，突然弹出这个购买页面，然后我就买到小米3了。</p>
+<p>时间是<code>2014年07月01日 09:48</code></p>
+<p>代码也就再也没去优化。</p>
+                </div><!-- /.entry-content -->
+		<p></p>
+		<p></p>
+                <div class="comments">
+                <h2>文章评论</h2>
+                        <div id="disqus_thread"></div>
+                        <script type="text/javascript">
+                           var disqus_identifier = "posts/fun/xiao-mi-shou-ji-lun-xun-shi-fou-you-huo-jiao-ben/";
+                           (function() {
+                                var dsq = document.createElement('script');
+                                dsq.type = 'text/javascript'; dsq.async = true;
+                                dsq.src = 'http://lilinux-blog.disqus.com/embed.js';
+                                (document.getElementsByTagName('head')[0] ||
+                                 document.getElementsByTagName('body')[0]).appendChild(dsq);
+                          })();
+                        </script>
+                </div>
+        </article>
+</section>
+        </div><!--/span-->
+
+                <div class="span3 well sidebar-nav" id="sidebar">
+<ul class="nav nav-list">
+<li class="nav-header"><h4><i class="icon-external-link"></i> 链接</h4></li>
+    <li><a href="http://qcloud.com/"><i class="icon-external-link"></i>QCloud</a></li>
+
+<li class="nav-header"><h4><i class="icon-folder-close icon-large"></i> 类别</h4></li>
+<li>
+<a href="http://blog.lilinux.com/category/cloud.html">
+    <i class="icon-folder-open icon-large"></i>Cloud
+</a>
+</li>
+<li>
+<a href="http://blog.lilinux.com/category/fun.html">
+    <i class="icon-folder-open icon-large"></i>Fun
+</a>
+</li>
+<li>
+<a href="http://blog.lilinux.com/category/misc.html">
+    <i class="icon-folder-open icon-large"></i>misc
+</a>
+</li>
+
+<li class="nav-header"><h4><i class="icon-tags icon-large"></i> 标签</h4></li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/yun-ji-suan.html">
+        <i class="icon-tag icon-large"></i>云计算
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/libvirt.html">
+        <i class="icon-tag icon-large"></i>libvirt
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/urllib.html">
+        <i class="icon-tag icon-large"></i>urllib
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/qemu.html">
+        <i class="icon-tag icon-large"></i>qemu
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/hook.html">
+        <i class="icon-tag icon-large"></i>hook
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/kvm.html">
+        <i class="icon-tag icon-large"></i>kvm
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/qiang-gou.html">
+        <i class="icon-tag icon-large"></i>抢购
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/python.html">
+        <i class="icon-tag icon-large"></i>Python
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/xu-ni-hua.html">
+        <i class="icon-tag icon-large"></i>虚拟化
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/pa-chong.html">
+        <i class="icon-tag icon-large"></i>爬虫
+    </a>
+</li>
+
+
+    <iframe width="100%" height="550" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=550&fansRow=2&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1816173632&verifier=f2e5e0d3&dpc=1"></iframe>
+</ul>        </div><!--/.well -->
+
+      </div><!--/row-->
+
+      <hr>
+
+      <footer>
+        <address id="about">
+                Proudly powered by <a href="http://pelican.notmyidea.org/">Pelican <i class="icon-external-link"></i></a>,
+                                which takes great advantage of <a href="http://python.org">Python <i class="icon-external-link"></i></a>.
+        </address><!-- /#about -->
+
+        <p>The theme is from <a href="http://twitter.github.com/bootstrap/">Bootstrap from Twitter <i class="icon-external-link"></i></a>,
+                   and <a href="http://fortawesome.github.com/Font-Awesome/">Font-Awesome <i class="icon-external-link"></i></a>, thanks!</p>
+      </footer>
+
+    </div><!--/.fluid-container-->
+
+
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+	var pageTracker = _gat._getTracker("UA-53342762-2");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+<script type="text/javascript">
+    var disqus_shortname = 'lilinux-blog';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+
+    <!-- Le javascript -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="http://blog.lilinux.com/theme/js/jquery-1.7.2.min.js"></script>
+    <script src="http://blog.lilinux.com/theme/js/bootstrap.min.js"></script>
+  </body>
+</html>
