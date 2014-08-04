@@ -152,33 +152,37 @@ if [ &quot;x${timeout}&quot; != &quot;x-1&quot; ]; then
 <p>果不出我所料，<code>set timeout=-1</code>不就相当于禁止了自动启动了吗。</p>
 <p>进一步分析<code>/boot/grub/grub.cfg</code>文件，发现有两种可能会导致<code>set timeout=-1</code></p>
 <ol>
-<li>
-<p>当引导时按住了键盘上的<code>Shift</code>键</p>
-<p>:::bash
-if [ "x${timeout}" != "x-1" ]; then
-  if keystatus; then
-    if keystatus --shift; then
-      set timeout=-1
-    else
-      set timeout=0
-    fi
-  else
-    if sleep --interruptible 3 ; then
-      set timeout=0
-    fi
-  fi
-fi</p>
-</li>
-<li>
-<p>当<code>recordfail</code>被设置</p>
-<p>:::bash
-if [ "${recordfail}" = 1 ]; then
-  set timeout=-1
-else
-  set timeout=10
-fi</p>
-</li>
+<li>当引导时按住了键盘上的<code>Shift</code>键</li>
 </ol>
+<p>代码如下：</p>
+<div class="highlight"><pre><span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;x${timeout}&quot;</span> !<span class="o">=</span> <span class="s2">&quot;x-1&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  if </span>keystatus; <span class="k">then</span>
+<span class="k">    if </span>keystatus --shift; <span class="k">then</span>
+<span class="k">      </span><span class="nb">set </span><span class="nv">timeout</span><span class="o">=</span>-1
+    <span class="k">else</span>
+<span class="k">      </span><span class="nb">set </span><span class="nv">timeout</span><span class="o">=</span>0
+    <span class="k">fi</span>
+<span class="k">  else</span>
+<span class="k">    if </span>sleep --interruptible 3 ; <span class="k">then</span>
+<span class="k">      </span><span class="nb">set </span><span class="nv">timeout</span><span class="o">=</span>0
+    <span class="k">fi</span>
+<span class="k">  fi</span>
+<span class="k">fi</span>
+</pre></div>
+
+
+<ol>
+<li>当<code>recordfail</code>被设置</li>
+</ol>
+<p>代码如下：</p>
+<div class="highlight"><pre><span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;${recordfail}&quot;</span> <span class="o">=</span> 1 <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nb">set </span><span class="nv">timeout</span><span class="o">=</span>-1
+<span class="k">else</span>
+<span class="k">  </span><span class="nb">set </span><span class="nv">timeout</span><span class="o">=</span>10
+<span class="k">fi</span>
+</pre></div>
+
+
 <p>然后我掐指一算，同事不可能按得往<code>Shift</code>的，那一定就是 recordfail了</p>
 <p>解决的办法是把第二段代码改成</p>
 <div class="highlight"><pre><span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;${recordfail}&quot;</span> <span class="o">=</span> 1 <span class="o">]</span>; <span class="k">then</span>
@@ -255,48 +259,18 @@ update-grub
 
 <li class="nav-header"><h4><i class="icon-tags icon-large"></i> 标签</h4></li>
 <li class="tag-4">
-    <a href="http://blog.lilinux.com/tag/yun-ji-suan.html">
-        <i class="icon-tag icon-large"></i>云计算
-    </a>
-</li>
-<li class="tag-4">
-    <a href="http://blog.lilinux.com/tag/urllib.html">
-        <i class="icon-tag icon-large"></i>urllib
-    </a>
-</li>
-<li class="tag-4">
-    <a href="http://blog.lilinux.com/tag/qiang-gou.html">
-        <i class="icon-tag icon-large"></i>抢购
-    </a>
-</li>
-<li class="tag-4">
-    <a href="http://blog.lilinux.com/tag/pa-chong.html">
-        <i class="icon-tag icon-large"></i>爬虫
-    </a>
-</li>
-<li class="tag-4">
-    <a href="http://blog.lilinux.com/tag/libvirt.html">
-        <i class="icon-tag icon-large"></i>libvirt
-    </a>
-</li>
-<li class="tag-4">
-    <a href="http://blog.lilinux.com/tag/hook.html">
-        <i class="icon-tag icon-large"></i>hook
-    </a>
-</li>
-<li class="tag-4">
     <a href="http://blog.lilinux.com/tag/xu-ni-hua.html">
         <i class="icon-tag icon-large"></i>虚拟化
     </a>
 </li>
 <li class="tag-4">
-    <a href="http://blog.lilinux.com/tag/python.html">
-        <i class="icon-tag icon-large"></i>Python
+    <a href="http://blog.lilinux.com/tag/ubuntu.html">
+        <i class="icon-tag icon-large"></i>ubuntu
     </a>
 </li>
 <li class="tag-4">
-    <a href="http://blog.lilinux.com/tag/grub.html">
-        <i class="icon-tag icon-large"></i>grub
+    <a href="http://blog.lilinux.com/tag/recordfail.html">
+        <i class="icon-tag icon-large"></i>recordfail
     </a>
 </li>
 <li class="tag-4">
@@ -305,8 +279,18 @@ update-grub
     </a>
 </li>
 <li class="tag-4">
-    <a href="http://blog.lilinux.com/tag/recordfail.html">
-        <i class="icon-tag icon-large"></i>recordfail
+    <a href="http://blog.lilinux.com/tag/grub.html">
+        <i class="icon-tag icon-large"></i>grub
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/hook.html">
+        <i class="icon-tag icon-large"></i>hook
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/urllib.html">
+        <i class="icon-tag icon-large"></i>urllib
     </a>
 </li>
 <li class="tag-4">
@@ -320,8 +304,28 @@ update-grub
     </a>
 </li>
 <li class="tag-4">
-    <a href="http://blog.lilinux.com/tag/ubuntu.html">
-        <i class="icon-tag icon-large"></i>ubuntu
+    <a href="http://blog.lilinux.com/tag/qiang-gou.html">
+        <i class="icon-tag icon-large"></i>抢购
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/python.html">
+        <i class="icon-tag icon-large"></i>Python
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/yun-ji-suan.html">
+        <i class="icon-tag icon-large"></i>云计算
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/pa-chong.html">
+        <i class="icon-tag icon-large"></i>爬虫
+    </a>
+</li>
+<li class="tag-4">
+    <a href="http://blog.lilinux.com/tag/libvirt.html">
+        <i class="icon-tag icon-large"></i>libvirt
     </a>
 </li>
 
