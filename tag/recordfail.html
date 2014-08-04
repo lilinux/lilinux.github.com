@@ -2,7 +2,7 @@
 <html lang="zh">
   <head>
     <meta charset="utf-8">
-    <title>Simple is Beautiful</title>
+    <title>Simple is Beautiful - recordfail</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="lilinux">
@@ -101,18 +101,50 @@
     <div class="container-fluid">
       <div class="row">
         <div class="span9" id="content">
-<h1>Archives for 2014</h1>
+        <div class="article">
+                <h1><a href="http://blog.lilinux.com/posts/linux/ubuntu-grub2-recordfail/">ubuntu崩溃重启后卡在grub界面</a></h1>
+                <div class="well small"><footer class="post-info">
+<span class="label">日期</span>
+<abbr class="published" title="2014-08-05T03:49:00">
+        <i class="icon-calendar"></i>2014-08-05 03:49:00
+</abbr>
+<span class="label">作者</span>
+<a href="http://blog.lilinux.com/author/lilinux.html"><i class="icon-user"></i>lilinux</a>
+<span class="label">类别</span>
+<a href="http://blog.lilinux.com/category/linux.html"><i class="icon-folder-open"></i>Linux</a>.
 
-<dl>
-    <dt>2014-08-05 03:49:00</dt>
-    <dd><a href="http://blog.lilinux.com/posts/linux/ubuntu-grub2-recordfail/">ubuntu崩溃重启后卡在grub界面</a></dd>
-    <dt>2014-07-30 06:00:00</dt>
-    <dd><a href="http://blog.lilinux.com/posts/cloud/qemu-reboot-hook/">KVM子机重启事件的hook探索</a></dd>
-    <dt>2014-07-01 12:30:00</dt>
-    <dd><a href="http://blog.lilinux.com/posts/fun/xiao-mi-shou-ji-lun-xun-shi-fou-you-huo-jiao-ben/">小米手机轮询是否有货脚本</a></dd>
-    <dt>2014-06-24 00:00:00</dt>
-    <dd><a href="http://blog.lilinux.com/posts/misc/hello/">Hello, World</a></dd>
-</dl>
+
+<span class="label">标签</span>
+	<a href="http://blog.lilinux.com/tag/ubuntu.html"><i class="icon-tag"></i>ubuntu</a>
+	<a href="http://blog.lilinux.com/tag/grub.html"><i class="icon-tag"></i>grub</a>
+	<a href="http://blog.lilinux.com/tag/recordfail.html"><i class="icon-tag"></i>recordfail</a>
+	<a href="http://blog.lilinux.com/tag/timeout.html"><i class="icon-tag"></i>timeout</a>
+</footer><!-- /.post-info --></div>
+                <div class="summary"><p>今天同事说，ubuntu子机重启失败，ssh和ping都不通。</p>
+<p>我找到母机一看，qemu进程正好绑了个vnc端口，然后通过多层<code>ssh dynamic forwarding</code>，登录上了子机的vnc界面，发现vnc显示着grub，正在等待选择启动项。</p>
+<p>按下回车，问题就解决了。</p>
+<p>可是，grub都有超时时间，为什么在重启之后，grub没有在超时时间到期后自动选择默认的启动项呢？</p>
+<p>于是我想到了我安身立命的工具之一 <code>grep</code></p>
+<div class="highlight"><pre># grep timeout /boot/grub/grub.cfg
+set timeout=-1
+  set timeout=10
+if [ &quot;x${timeout}&quot; != &quot;x-1&quot; ]; then
+      set timeout=-1
+      set timeout=0
+      set timeout=0
+</pre></div>
+
+
+<p>果不出我所料，<code>set timeout=-1 ...</code></p>
+                        <a class="btn primary xsmall" href="http://blog.lilinux.com/posts/linux/ubuntu-grub2-recordfail/">阅读更多 ...</a>
+                </div>
+        </div>
+        <hr />
+
+                <section id="content" class="body">
+                <h1>Pages</h1>
+                        <li><a href="http://blog.lilinux.com/pages/about.html">About</a></li>
+                </section>
         </div><!--/span-->
 
                 <div class="span3 well sidebar-nav" id="sidebar">

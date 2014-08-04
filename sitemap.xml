@@ -5,28 +5,28 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
 <url>
 <loc>http://blog.lilinux.com/index.html</loc>
-<lastmod>2014-08-05T06:06:25-00:00</lastmod>
+<lastmod>2014-08-05T06:07:38-00:00</lastmod>
 <changefreq>daily</changefreq>
 <priority>0.5</priority>
 </url>
 
 <url>
 <loc>http://blog.lilinux.com/archives.html</loc>
-<lastmod>2014-08-05T06:06:25-00:00</lastmod>
+<lastmod>2014-08-05T06:07:38-00:00</lastmod>
 <changefreq>daily</changefreq>
 <priority>0.5</priority>
 </url>
 
 <url>
 <loc>http://blog.lilinux.com/tags.html</loc>
-<lastmod>2014-08-05T06:06:25-00:00</lastmod>
+<lastmod>2014-08-05T06:07:38-00:00</lastmod>
 <changefreq>daily</changefreq>
 <priority>0.5</priority>
 </url>
 
 <url>
 <loc>http://blog.lilinux.com/categories.html</loc>
-<lastmod>2014-08-05T06:06:25-00:00</lastmod>
+<lastmod>2014-08-05T06:07:38-00:00</lastmod>
 <changefreq>daily</changefreq>
 <priority>0.5</priority>
 </url>
@@ -34,6 +34,13 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
 <loc>http://blog.lilinux.com/pages/about.html</loc>
 <lastmod>2014-07-24T00:00:00-00:00</lastmod>
+<changefreq>monthly</changefreq>
+<priority>0.5</priority>
+</url>
+
+<url>
+<loc>http://blog.lilinux.com/posts/linux/ubuntu-grub2-recordfail/</loc>
+<lastmod>2014-08-05T03:49:00-00:00</lastmod>
 <changefreq>monthly</changefreq>
 <priority>0.5</priority>
 </url>
@@ -74,8 +81,22 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 </url>
 
 <url>
+<loc>http://blog.lilinux.com/category/linux.html</loc>
+<lastmod>2014-08-05T03:49:00-00:00</lastmod>
+<changefreq>daily</changefreq>
+<priority>0.5</priority>
+</url>
+
+<url>
 <loc>http://blog.lilinux.com/category/misc.html</loc>
 <lastmod>2014-06-24T00:00:00-00:00</lastmod>
+<changefreq>daily</changefreq>
+<priority>0.5</priority>
+</url>
+
+<url>
+<loc>http://blog.lilinux.com/tag/grub.html</loc>
+<lastmod>2014-08-05T03:49:00-00:00</lastmod>
 <changefreq>daily</changefreq>
 <priority>0.5</priority>
 </url>
@@ -123,6 +144,27 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 </url>
 
 <url>
+<loc>http://blog.lilinux.com/tag/recordfail.html</loc>
+<lastmod>2014-08-05T03:49:00-00:00</lastmod>
+<changefreq>daily</changefreq>
+<priority>0.5</priority>
+</url>
+
+<url>
+<loc>http://blog.lilinux.com/tag/timeout.html</loc>
+<lastmod>2014-08-05T03:49:00-00:00</lastmod>
+<changefreq>daily</changefreq>
+<priority>0.5</priority>
+</url>
+
+<url>
+<loc>http://blog.lilinux.com/tag/ubuntu.html</loc>
+<lastmod>2014-08-05T03:49:00-00:00</lastmod>
+<changefreq>daily</changefreq>
+<priority>0.5</priority>
+</url>
+
+<url>
 <loc>http://blog.lilinux.com/tag/qiang-gou.html</loc>
 <lastmod>2014-07-01T12:30:00-00:00</lastmod>
 <changefreq>daily</changefreq>
@@ -152,7 +194,7 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
 <url>
 <loc>http://blog.lilinux.com/author/lilinux.html</loc>
-<lastmod>2014-07-30T06:00:00-00:00</lastmod>
+<lastmod>2014-08-05T03:49:00-00:00</lastmod>
 <changefreq>daily</changefreq>
 <priority>0.5</priority>
 </url>
